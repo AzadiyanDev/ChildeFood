@@ -42,27 +42,36 @@ app.UseAuthorization();
 // مپ کردن اندپوینت‌های کنترلرها
 app.MapControllers();
 
-// ۶. سرو کردن ویوی انگولار کپی‌شده
-var clientAppDist = Path.Combine(builder.Environment.ContentRootPath, "ClientApp", "dist", "app", "browser");
-if (Directory.Exists(clientAppDist))
+// در محیط دولوپمنت، اگر کاربر پورت ۵۱۰۹ رو باز کرد، اتوماتیک بره روی سرور زنده ۴۲۰۰ با هات‌ریلود
+if (app.Environment.IsDevelopment())
 {
-    app.UseDefaultFiles(new DefaultFilesOptions
-    {
-        FileProvider = new PhysicalFileProvider(clientAppDist)
-    });
+    app.MapGet("/", () => Results.Redirect("http://127.0.0.1:4200"));
+}
 
-    app.UseStaticFiles(new StaticFileOptions
+// ۶. سرو کردن ویوی انگولار برای محیط پروداکشن (در محیط دولوپمنت، سرور زنده با هات‌ریلود فعال است)
+if (!app.Environment.IsDevelopment())
+{
+    var clientAppDist = Path.Combine(builder.Environment.ContentRootPath, "ClientApp", "dist", "app", "browser");
+    if (Directory.Exists(clientAppDist))
     {
-        FileProvider = new PhysicalFileProvider(clientAppDist)
-    });
+        app.UseDefaultFiles(new DefaultFilesOptions
+        {
+            FileProvider = new PhysicalFileProvider(clientAppDist)
+        });
 
-    // روت فال‌بک برای SPA انگولار
-    app.MapFallback(async context =>
-    {
-        var indexPath = Path.Combine(clientAppDist, "index.html");
-        context.Response.ContentType = "text/html; charset=utf-8";
-        await context.Response.SendFileAsync(indexPath);
-    });
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(clientAppDist)
+        });
+
+        // روت فال‌بک برای SPA انگولار
+        app.MapFallback(async context =>
+        {
+            var indexPath = Path.Combine(clientAppDist, "index.html");
+            context.Response.ContentType = "text/html; charset=utf-8";
+            await context.Response.SendFileAsync(indexPath);
+        });
+    }
 }
 
 app.Run();
