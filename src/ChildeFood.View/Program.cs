@@ -1,6 +1,7 @@
 using ChildeFood.Application;
 using ChildeFood.Infrastructure;
 using ChildeFood.Persistence;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins("http://localhost:4200", "http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -40,5 +41,28 @@ app.UseAuthorization();
 
 // مپ کردن اندپوینت‌های کنترلرها
 app.MapControllers();
+
+// ۶. سرو کردن ویوی انگولار کپی‌شده
+var clientAppDist = Path.Combine(builder.Environment.ContentRootPath, "ClientApp", "dist", "app", "browser");
+if (Directory.Exists(clientAppDist))
+{
+    app.UseDefaultFiles(new DefaultFilesOptions
+    {
+        FileProvider = new PhysicalFileProvider(clientAppDist)
+    });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(clientAppDist)
+    });
+
+    // روت فال‌بک برای SPA انگولار
+    app.MapFallback(async context =>
+    {
+        var indexPath = Path.Combine(clientAppDist, "index.html");
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.SendFileAsync(indexPath);
+    });
+}
 
 app.Run();

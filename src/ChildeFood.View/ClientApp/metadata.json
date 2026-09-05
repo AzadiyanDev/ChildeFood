@@ -1,0 +1,6 @@
+{
+  "name": "سفارش آنلاین غذا",
+  "description": "سامانه سفارش آنلاین غذای مدارس با داشبورد اختصاصی والد و فرزندان",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

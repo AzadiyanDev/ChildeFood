@@ -1,13 +1,11 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
-import { routes } from './app.routes';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
+import {provideRouter} from '@angular/router';
 
-// کانفیگ‌های اصلی اپلیکیشن انگولار شامل روتر و اچ‌تی‌تی‌پی کلاینت مدرن
+import {routes} from './app.routes';
+
 export const appConfig: ApplicationConfig = {
-  providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
-    provideHttpClient(withFetch())
-  ]
+  providers: [provideBrowserGlobalErrorListeners(), provideRouter(routes)],
 };
