@@ -1,0 +1,44 @@
+using ChildeFood.Application;
+using ChildeFood.Infrastructure;
+using ChildeFood.Persistence;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ۱. رجیستر کردن لایه‌های معماری تمیز در کانتینر DI
+builder.Services.AddApplicationServices();
+builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddInfrastructureServices();
+
+// ۲. تنظیمات کنترلرهای وب
+builder.Services.AddControllers();
+
+// ۳. فعال‌سازی داکیومنت OpenAPI
+builder.Services.AddOpenApi();
+
+// ۴. تنظیم CORS برای ارتباط راحت سرور دات‌نت با فرانت‌اند انگولار در حالت دولوپمنت
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var app = builder.Build();
+
+// ۵. پایپ‌لاین ریکوئست‌ها
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseHttpsRedirection();
+app.UseCors("AllowAngularApp");
+app.UseAuthorization();
+
+// مپ کردن اندپوینت‌های کنترلرها
+app.MapControllers();
+
+app.Run();

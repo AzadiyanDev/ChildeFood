@@ -1,0 +1,209 @@
+<div dir="rtl" class="min-h-screen bg-slate-50 text-slate-800 font-sans pb-16">
+  <!-- هدر بالای صفحه -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-reverse space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-white shadow-md font-bold text-lg">
+          👶
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">چایلد فود (ChildeFood)</h1>
+          <p class="text-xs text-slate-500">سامانه تغذیه سالم کودک و نوزاد</p>
+        </div>
+      </div>
+
+      <!-- برچسب‌های تکنولوژی و معماری پروژه -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+          .NET 10
+        </span>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Clean Architecture
+        </span>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+          Angular 21
+        </span>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+          Tailwind CSS
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- بدنه اصلی صفحه -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+    <!-- بخش معرفی و دکمه‌های کنترلی -->
+    <section class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900 mb-1">منوی محصولات و خوراکی‌ها</h2>
+        <p class="text-sm text-slate-500">لیست غذاها که از لایه دامین و دیتابیس توسط لایه اینفراستراکچر واکشی شده‌اند.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          (click)="loadFoods()"
+          [disabled]="isLoading()"
+          class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50">
+          <svg class="w-4 h-4 ml-2" [class.animate-spin]="isLoading()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          به‌روزرسانی
+        </button>
+
+        <button
+          (click)="openModal()"
+          class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm">
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          افزودن غذای جدید
+        </button>
+      </div>
+    </section>
+
+    <!-- پیام خطا در صورت عدم برقراری ارتباط -->
+    @if (errorMessage()) {
+      <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+        <button (click)="loadFoods()" class="text-xs font-bold underline hover:text-rose-900">تلاش مجدد</button>
+      </div>
+    }
+
+    <!-- کارت‌های نمایش غذاها -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (food of foods(); track food.id) {
+        <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+          <div class="p-6">
+            <!-- برچسب دسته‌بندی و رده سنی -->
+            <div class="flex items-center justify-between mb-4">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                {{ food.categoryTitle }}
+              </span>
+              <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
+                مناسب +{{ food.minAgeMonths }} ماه
+              </span>
+            </div>
+
+            <!-- عنوان غذا -->
+            <h3 class="text-base font-bold text-slate-900 mb-2">{{ food.title }}</h3>
+
+            <!-- توضیحات -->
+            <p class="text-sm text-slate-600 leading-relaxed mb-4">
+              {{ food.description }}
+            </p>
+          </div>
+
+          <!-- بخش قیمت و وضعیت در پایین کارت -->
+          <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-400 block">قیمت:</span>
+              <span class="text-base font-extrabold text-slate-900">{{ food.price | number }}</span>
+              <span class="text-xs text-slate-500 mr-1">تومان</span>
+            </div>
+
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              موجود در انبار
+            </span>
+          </div>
+        </article>
+      } @empty {
+        @if (!isLoading()) {
+          <div class="col-span-full py-16 text-center bg-white rounded-2xl border border-dashed border-slate-300">
+            <p class="text-slate-500 text-sm">هیچ آیتم غذایی در سیستم یافت نشد.</p>
+          </div>
+        }
+      }
+    </div>
+  </main>
+
+  <!-- مودال ثبت غذای جدید -->
+  @if (showModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+        <div class="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
+          <h3 class="text-lg font-bold text-slate-900">افزودن غذای جدید کودک</h3>
+          <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+        </div>
+
+        <form (ngSubmit)="submitFood()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">عنوان غذا</label>
+            <input
+              type="text"
+              [(ngModel)]="newFood.title"
+              name="title"
+              placeholder="مثال: سرلاک برنج و شیر"
+              required
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">توضیحات و خواص</label>
+            <textarea
+              [(ngModel)]="newFood.description"
+              name="description"
+              rows="3"
+              placeholder="توضیحات کوتاه درباره محتویات..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">قیمت (تومان)</label>
+              <input
+                type="number"
+                [(ngModel)]="newFood.price"
+                name="price"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">حداقل سن (ماه)</label>
+              <input
+                type="number"
+                [(ngModel)]="newFood.minAgeMonths"
+                name="minAgeMonths"
+                min="4"
+                max="36"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">دسته‌بندی</label>
+            <select
+              [(ngModel)]="newFood.category"
+              name="category"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+              <option [value]="1">پوره و سرلاک</option>
+              <option [value]="2">سوپ مقوی</option>
+              <option [value]="3">میان‌وعده سالم</option>
+              <option [value]="4">غذای اصلی کودک</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              (click)="closeModal()"
+              class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+              انصراف
+            </button>
+            <button
+              type="submit"
+              [disabled]="isLoading()"
+              class="px-5 py-2 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors disabled:opacity-50">
+              ثبت در سیستم
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
