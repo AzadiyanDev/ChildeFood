@@ -23,9 +23,9 @@ export class PwaService {
   private initPwaListeners(): void {
     if (typeof window === 'undefined') return;
 
-    // Check if already in standalone / installed mode
+    // اینجا چک می‌کنیم اگه متد matchMedia در دسترس بود (مثلاً توی محیط تست یا مرورگرهای قدیمی که نیست) ارور نده
     const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
+      (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches) ||
       (window.navigator as unknown as {standalone?: boolean}).standalone === true;
     this.isInstalled.set(isStandalone);
 

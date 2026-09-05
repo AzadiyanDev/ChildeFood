@@ -20,4 +20,9 @@
     <ProjectReference Include="..\ChildeFood.Persistence\ChildeFood.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- تغییرات فرانت‌اند توسط Vite انگولار مدیریت میشه؛ دات‌نت واچ این پوشه رو نادیده می‌گیره تا ری‌استارت نخوره -->
+    <Watch Remove="ClientApp\**" />
+  </ItemGroup>
+
 </Project>
