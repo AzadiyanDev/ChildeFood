@@ -1,5 +1,4 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
-import {Header} from './components/header/header';
 import {BottomNav} from './components/bottom-nav/bottom-nav';
 import {CartDrawer} from './components/cart-drawer/cart-drawer';
 import {OrdersDrawer} from './components/orders-drawer/orders-drawer';
@@ -18,7 +17,6 @@ import {FoodStore} from './services/food-store';
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    Header,
     HomePage,
     MealsPage,
     CalendarPage,

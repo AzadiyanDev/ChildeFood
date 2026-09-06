@@ -1,16 +1,15 @@
-<div class="min-h-screen bg-[#fbfbfb] text-gray-900 selection:bg-orange-200">
+<div class="min-h-screen bg-white text-[#111111] selection:bg-[#FF6B3D]/20">
   <div
     id="main-app-container"
-    class="w-full max-w-md mx-auto min-h-screen flex flex-col pb-32 relative"
+    class="w-full max-w-md mx-auto min-h-screen flex flex-col relative bg-white pb-32"
     dir="rtl">
     
-    <!-- PWA Install Banner & Guide -->
-    <app-pwa-install />
-
-    <!-- Top Delivery Bar & Actions (Hidden on dedicated wallet, children, orders, profile, and calendar pages) -->
-    @if (foodStore.activePage() !== 'wallet' && foodStore.activePage() !== 'children' && foodStore.activePage() !== 'orders' && foodStore.activePage() !== 'profile' && foodStore.activePage() !== 'calendar') {
-      <app-header />
+    <!-- بنر راهنمای نصب PWA؛ در صفحه سفارش ناهار طبق نیازمندی R2 جهت حفظ تمرکز کاربر مخفی می‌شود -->
+    @if (foodStore.activePage() !== 'meals') {
+      <app-pwa-install />
     }
+
+    <!-- نوار آدرس و هدر عمومی مارکت‌پلیس طبق الزام R2 در صفحه انتخاب غذا به طور کامل حذف شد -->
 
     <!-- Dynamic Page Switcher: Home vs Calendar vs Wallet vs Children vs Orders vs Profile vs Meals (Food Selection) -->
     @if (foodStore.activePage() === 'home') {
@@ -29,8 +28,10 @@
       <app-meals-page />
     }
 
-    <!-- Floating Bottom Navigation Bar (firmly fixed at bottom, kept as is) -->
-    <app-bottom-nav />
+    <!-- نوار ناوبری شناور جزیره‌ای (طبق الزامات R2 و معیارهای پذیرش در صفحه انتخاب غذا مخفی می‌شود) -->
+    @if (foodStore.activePage() !== 'meals') {
+      <app-bottom-nav />
+    }
 
     <!-- Cart Drawer Modal -->
     <app-cart-drawer />

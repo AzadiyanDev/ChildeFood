@@ -114,7 +114,7 @@ import {FoodStore} from '../../services/food-store';
                     ↑
                   </div>
                   <div>
-                    <p class="text-xs font-bold text-gray-800">سفارش ناهار آرتین</p>
+                    <p class="text-xs font-bold text-gray-800">سفارش ناهار علی</p>
                     <span class="text-[10px] text-gray-400">دیروز - کباب چوبی</span>
                   </div>
                 </div>

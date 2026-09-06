@@ -11,16 +11,23 @@ export class FoodStore {
   // Selected child for which food is currently being ordered
   readonly selectedChildId = signal<string | null>('child-1');
 
-  // Currently selected days in calendar view (default remaining school days of current week: 15, 16, 17, 18)
-  readonly selectedCalendarDays = signal<number[]>([15, 16, 17, 18]);
+  // روزهای انتخاب شده تقویم (پیش‌فرض خالی است تا کاربر خودش روزها را انتخاب کند)
+  readonly selectedCalendarDays = signal<number[]>([]);
 
-  // Parent Profile Data
+  // ذخیره‌سازی نگاشت روز به غذای انتخاب‌شده برای فلو مرحله‌به‌مرحله انتخاب غذا
+  readonly dayMealSelections = signal<Record<number, {
+    foodId: string;
+    portion: 'کامل' | 'نیم پرس';
+    quantity: number;
+  }>>({});
+
+  // پروفایل والد؛ نام روی «محمد» و موجودی اولیه طبق نیازمندی پرامپت روی ۲۵۰,۰۰۰ تومان تنظیم شده
   readonly parentProfile = signal<ParentProfile>({
-    name: 'سارا احمدی',
+    name: 'محمد',
     role: 'والد دانش‌آموز',
     phone: '۰۹۱۲۳۴۵۶۷۸۹',
-    avatar: '👩‍💼',
-    walletBalance: 450000,
+    avatar: '👨‍💼',
+    walletBalance: 250000,
     activeChildrenCount: 3,
   });
 
@@ -28,9 +35,9 @@ export class FoodStore {
   readonly children = signal<ChildItem[]>([
     {
       id: 'child-1',
-      name: 'آرتین احمدی',
-      grade: 'پایه پنجم ابتدایی',
-      school: 'دبستان غیردولتی سرو',
+      name: 'علی احمدی',
+      grade: 'کلاس پنجم',
+      school: 'مدرسه نمونه',
       avatar: '👦',
       age: 11,
       dietaryNote: 'بدون حساسیت غذایی',
@@ -51,32 +58,32 @@ export class FoodStore {
     {
       id: 'child-3',
       name: 'امیرعلی احمدی',
-      grade: 'پیش‌دبستانی ۲',
-      school: 'مرکز نوآموزان شکوفه',
+      grade: 'پایه پنجم',
+      school: 'مدرسه نمونه',
       avatar: '🧒',
-      age: 6,
+      age: 11,
       dietaryNote: 'غذای کم‌ادویه و سبک',
       favoriteFood: 'نودل توئیستارا',
       hasOrderToday: false,
     },
   ]);
 
-  // Today's active school meal orders for home page
+  // سفارش‌های ناهار گرم امروز بچه‌ها برای نمایش توی صفحه اصلی و بخش پیگیری
   readonly todayOrders = signal([
     {
       id: 'ORD-1042',
       childId: 'child-1',
-      childName: 'آرتین احمدی',
+      childName: 'علی احمدی',
       childAvatar: '👦',
-      school: 'دبستان غیردولتی سرو',
-      grade: 'کلاس ۵۰۲',
-      foodTitle: 'چلو جوجه کباب زعفرانی',
-      foodSubtitle: 'همراه با برنج ایرانی، گوجه کبابی و زیتون پرورده',
+      school: 'مدرسه نمونه',
+      grade: 'کلاس پنجم',
+      foodTitle: 'جوجه کباب',
+      foodSubtitle: 'پرس کامل',
       foodEmoji: '🍗',
       deliveryTime: 'ساعت ۱۲:۳۰',
-      date: 'امروز - شنبه ۱۵ شهریور',
+      date: 'امروز - شنبه ۱۰ شهریور',
       status: 'delivering' as const,
-      statusText: 'در حال ارسال به مدرسه',
+      statusText: 'در حال آماده‌سازی',
       price: 185000,
       trackingCode: '984712',
     },
@@ -87,13 +94,13 @@ export class FoodStore {
       childAvatar: '👧',
       school: 'دبستان دخترانه سرو',
       grade: 'کلاس ۲۰۴',
-      foodTitle: 'پاستا آلفردو با فیله مرغ',
-      foodSubtitle: 'پاستا پنه با سس قارچ تازه، پنیر پارمسان و نوشیدنی',
+      foodTitle: 'ماکارونی',
+      foodSubtitle: 'پرس کامل',
       foodEmoji: '🍝',
       deliveryTime: 'ساعت ۱۲:۴۵',
-      date: 'امروز - شنبه ۱۵ شهریور',
-      status: 'buffet_ready' as const,
-      statusText: 'آماده تحویل در بوفه مدرسه',
+      date: 'امروز - شنبه ۱۰ شهریور',
+      status: 'delivered' as const,
+      statusText: 'تحویل شده',
       price: 160000,
       trackingCode: '984530',
     },
@@ -115,7 +122,8 @@ export class FoodStore {
     {dayNumber: 18, label: '۱۸'},
   ]);
 
-  // Currently selected date day (default: 15)
+  // روز انتخابی فعلی تقویم (پیش‌فرض طبق نیازمندی ریدیزاین روی روز ۱۶ شهریور تنظیم شده)
+  // روز انتخابی کاربر در تقویم برای ثبت غذا؛ همیشه پیش‌فرض از روز اول (۱۵) شروع می‌شه
   readonly selectedDay = signal<number>(15);
 
   // Different food menus for each specific date
@@ -127,10 +135,10 @@ export class FoodStore {
         subtitle: 'همراه با سبزیجات گریل',
         badge: 'گریل شده',
         badgeType: 'grilled',
-        price: 6.20,
+        price: 62000,
         emoji: '🍢',
         transform: '-rotate-45 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'joojeh-kabab-12',
@@ -138,10 +146,10 @@ export class FoodStore {
         subtitle: 'همراه با برنج درجه یک ایرانی',
         badge: 'غذای روز',
         badgeType: 'popular',
-        price: 8.90,
+        price: 89000,
         emoji: '🍗',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'ghormeh-sabzi-12',
@@ -149,10 +157,10 @@ export class FoodStore {
         subtitle: 'با گوشت تازه گوسفندی و لوبیا',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 7.50,
+        price: 75000,
         emoji: '🥘',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'koobideh-12',
@@ -160,10 +168,10 @@ export class FoodStore {
         subtitle: 'دو سیخ کوبیده با گوجه کبابی',
         badge: 'ویژه سرآشپز',
         badgeType: 'chef',
-        price: 9.30,
+        price: 93000,
         emoji: '🥩',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'taco-12',
@@ -171,10 +179,10 @@ export class FoodStore {
         subtitle: 'با گوشت چرخ‌کرده و سالسا',
         badge: 'تند و اسپایسی 🌶️',
         badgeType: 'spicy',
-        price: 5.80,
+        price: 58000,
         emoji: '🌮',
         transform: 'rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'salad-shirazi-12',
@@ -182,10 +190,10 @@ export class FoodStore {
         subtitle: 'خیار، گوجه، پیاز و آبغوره',
         badge: 'پیش‌غذا',
         badgeType: 'discount',
-        price: 3.20,
+        price: 32000,
         emoji: '🥗',
         transform: 'scale-105',
-        category: 'food',
+        category: 'main',
       },
     ],
     13: [
@@ -195,10 +203,10 @@ export class FoodStore {
         subtitle: 'پیتزا مخصوص ایتالیایی با پنیر کش‌دار',
         badge: '۲۵٪-',
         badgeType: 'discount',
-        price: 8.99,
+        price: 85000,
         emoji: '🍕',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'pasta-alfredo-13',
@@ -206,10 +214,10 @@ export class FoodStore {
         subtitle: 'با فیله مرغ و قارچ تازه و خامه',
         badge: '۱۵٪-',
         badgeType: 'discount',
-        price: 9.15,
+        price: 92000,
         emoji: '🍝',
         transform: '-rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'lasagna-13',
@@ -217,10 +225,10 @@ export class FoodStore {
         subtitle: 'لایه‌های گوشت چرخ‌کرده با سس بشامل',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 8.50,
+        price: 85000,
         emoji: '🧀',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'pizza-pepperoni-13',
@@ -228,10 +236,10 @@ export class FoodStore {
         subtitle: 'پپرونی دودی اعلا با فلفل هالوپینو',
         badge: 'تند و اسپایسی 🌶️',
         badgeType: 'spicy',
-        price: 7.80,
+        price: 78000,
         emoji: '🍕',
         transform: 'rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'garlic-bread-13',
@@ -239,10 +247,10 @@ export class FoodStore {
         subtitle: 'با کره سیر دار و پنیر موزارلا',
         badge: 'پیش‌غذا',
         badgeType: 'discount',
-        price: 4.10,
+        price: 40000,
         emoji: '🥖',
         transform: 'rotate-6 scale-105',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'burger-13',
@@ -250,10 +258,10 @@ export class FoodStore {
         subtitle: 'برگر گوشت با پنیر چدار',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 7.50,
+        price: 75000,
         emoji: '🍔',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
     ],
     14: [
@@ -263,10 +271,10 @@ export class FoodStore {
         subtitle: 'با سس تند مخصوص آسیایی',
         badge: '۲۵٪-',
         badgeType: 'discount',
-        price: 5.33,
+        price: 54000,
         emoji: '🍜',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'sushi-mix-roll-14',
@@ -274,10 +282,10 @@ export class FoodStore {
         subtitle: 'سالمون نروژی و آووکادو تازه',
         badge: 'غذای سرآشپز',
         badgeType: 'chef',
-        price: 11.50,
+        price: 115000,
         emoji: '🍣',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'ramen-14',
@@ -285,10 +293,10 @@ export class FoodStore {
         subtitle: 'تخم‌مرغ نیم‌پز با نودل دست‌ساز و جلبک',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 8.20,
+        price: 82000,
         emoji: '🍲',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'spring-roll-14',
@@ -296,10 +304,10 @@ export class FoodStore {
         subtitle: '۴ عدد رول کریسپی با سس سوئیت چیلی',
         badge: '۱۵٪-',
         badgeType: 'discount',
-        price: 4.90,
+        price: 49000,
         emoji: '🥟',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'tempura-shrimp-14',
@@ -307,10 +315,10 @@ export class FoodStore {
         subtitle: 'میگو سوخاری سبک و ترد ژاپنی',
         badge: 'غذای دریایی',
         badgeType: 'chef',
-        price: 10.40,
+        price: 104000,
         emoji: '🍤',
         transform: 'rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'fried-chicken-14',
@@ -318,10 +326,10 @@ export class FoodStore {
         subtitle: '۴ تکه همراه سیب‌زمینی',
         badge: '۲۰٪-',
         badgeType: 'discount',
-        price: 8.40,
+        price: 84000,
         emoji: '🍗',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
     ],
     15: [
@@ -331,10 +339,10 @@ export class FoodStore {
         subtitle: 'با سس تند مخصوص',
         badge: '۲۵٪-',
         badgeType: 'discount',
-        price: 5.33,
+        price: 54000,
         emoji: '🍜',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'pizza-sicilia',
@@ -342,10 +350,10 @@ export class FoodStore {
         subtitle: 'پیتزا مخصوص ایتالیایی',
         badge: '۲۵٪-',
         badgeType: 'discount',
-        price: 8.99,
+        price: 85000,
         emoji: '🍕',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'burger-double-smash',
@@ -353,10 +361,10 @@ export class FoodStore {
         subtitle: 'برگر گوشت با پنیر چدار',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 7.50,
+        price: 75000,
         emoji: '🍔',
         transform: 'scale-110 hover:scale-115',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'kebab-mega',
@@ -364,10 +372,10 @@ export class FoodStore {
         subtitle: 'همراه با سبزیجات گریل',
         badge: 'گریل شده',
         badgeType: 'grilled',
-        price: 6.20,
+        price: 62000,
         emoji: '🍢',
         transform: '-rotate-45 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'taco-mexican',
@@ -375,10 +383,10 @@ export class FoodStore {
         subtitle: 'با گوشت چرخ‌کرده و سالسا',
         badge: 'تند و اسپایسی 🌶️',
         badgeType: 'spicy',
-        price: 5.80,
+        price: 58000,
         emoji: '🌮',
         transform: 'rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'pasta-alfredo',
@@ -386,10 +394,10 @@ export class FoodStore {
         subtitle: 'با فیله مرغ و قارچ تازه',
         badge: '۱۵٪-',
         badgeType: 'discount',
-        price: 9.15,
+        price: 92000,
         emoji: '🍝',
         transform: '-rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'sushi-mix-roll',
@@ -397,10 +405,10 @@ export class FoodStore {
         subtitle: 'سالمون نروژی و آووکادو',
         badge: 'غذای سرآشپز',
         badgeType: 'chef',
-        price: 11.50,
+        price: 115000,
         emoji: '🍣',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'crispy-fried-chicken',
@@ -408,23 +416,23 @@ export class FoodStore {
         subtitle: '۴ تکه همراه سیب‌زمینی',
         badge: '۲۰٪-',
         badgeType: 'discount',
-        price: 8.40,
+        price: 84000,
         emoji: '🍗',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
     ],
     16: [
       {
         id: 'burger-double-smash-16',
         title: 'برگر دوبل اسمش',
-        subtitle: 'دو پتی گوشت گوساله با پنیر دوبل',
+        subtitle: 'دو لایه گوشت با پنیر دوبل',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 7.50,
+        price: 75000,
         emoji: '🍔',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'chicken-burger-16',
@@ -432,10 +440,10 @@ export class FoodStore {
         subtitle: 'فیله سوخاری با سس هانی ماستارد',
         badge: '۲۰٪-',
         badgeType: 'discount',
-        price: 6.90,
+        price: 69000,
         emoji: '🍔',
         transform: '-rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'hotdog-cheese-16',
@@ -443,32 +451,10 @@ export class FoodStore {
         subtitle: 'هات‌داگ دودی تنوری در نان باگت نرم',
         badge: 'گریل شده',
         badgeType: 'grilled',
-        price: 5.50,
+        price: 55000,
         emoji: '🌭',
         transform: 'rotate-12 scale-110',
-        category: 'food',
-      },
-      {
-        id: 'fries-loaded-16',
-        title: 'سیب‌زمینی سوپریم پنیری',
-        subtitle: 'با دیپ پنیر چدار و بیکن گریل',
-        badge: 'پیش‌غذا',
-        badgeType: 'discount',
-        price: 4.60,
-        emoji: '🍟',
-        transform: 'scale-110',
-        category: 'food',
-      },
-      {
-        id: 'onion-rings-16',
-        title: 'پیاز سوخاری ترد',
-        subtitle: 'حلقه‌های پیاز ترد با سس باربیکیو',
-        badge: '۱۵٪-',
-        badgeType: 'discount',
-        price: 3.80,
-        emoji: '🧅',
-        transform: '-rotate-12 scale-105',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'crispy-chicken-16',
@@ -476,10 +462,76 @@ export class FoodStore {
         subtitle: '۴ تکه همراه سیب‌زمینی',
         badge: '۲۰٪-',
         badgeType: 'discount',
-        price: 8.40,
+        price: 84000,
         emoji: '🍗',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
+      },
+      {
+        id: 'drink-orange-16',
+        title: 'آبمیوه طبیعی پرتقال',
+        subtitle: 'آب پرتقال تازه و ارگانیک',
+        badge: 'طبیعی',
+        badgeType: 'chef',
+        price: 25000,
+        emoji: '🧃',
+        transform: 'scale-105',
+        category: 'drinks',
+      },
+      {
+        id: 'drink-lemonade-16',
+        title: 'لیموناد خنک نعنایی',
+        subtitle: 'نوشیدنی لیمو و نعناع تازه',
+        badge: 'خنک و تازه',
+        badgeType: 'discount',
+        price: 22000,
+        emoji: '🥤',
+        transform: 'rotate-6 scale-105',
+        category: 'drinks',
+      },
+      {
+        id: 'drink-dough-16',
+        title: 'دوغ سنتی نعنایی',
+        subtitle: 'دوغ محلی گازدار بطری',
+        badge: 'سنتی',
+        badgeType: 'popular',
+        price: 18000,
+        emoji: '🥛',
+        transform: 'scale-105',
+        category: 'drinks',
+      },
+      {
+        id: 'dessert-donut-16',
+        title: 'دونات شکلاتی مخصوص',
+        subtitle: 'دونات نرم با روکش شکلات بلژیکی',
+        badge: 'محبوب 🔥',
+        badgeType: 'popular',
+        price: 32000,
+        emoji: '🍩',
+        transform: 'scale-110',
+        category: 'dessert',
+      },
+      {
+        id: 'dessert-jelly-16',
+        title: 'ژله میوه‌ای رنگین‌کمان',
+        subtitle: 'ژله طبیعی بدون شکر افزوده',
+        badge: 'کم‌کالری',
+        badgeType: 'discount',
+        price: 20000,
+        emoji: '🍮',
+        transform: 'scale-105',
+        category: 'dessert',
+      },
+      {
+        id: 'dessert-muffin-16',
+        title: 'مافین وانیل شکلاتی',
+        subtitle: 'کیک مافین اسفنجی با تکه‌های کاکائو',
+        badge: 'عصرانه',
+        badgeType: 'chef',
+        price: 24000,
+        emoji: '🧁',
+        transform: 'scale-105',
+        category: 'dessert',
       },
     ],
     17: [
@@ -489,10 +541,10 @@ export class FoodStore {
         subtitle: 'با گوشت چرخ‌کرده، سالسا و هالوپینو',
         badge: 'تند و اسپایسی 🌶️',
         badgeType: 'spicy',
-        price: 5.80,
+        price: 58000,
         emoji: '🌮',
         transform: 'rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'burrito-beef-17',
@@ -500,10 +552,10 @@ export class FoodStore {
         subtitle: 'پیچیده در نان ترتیلا با پنیر و برنج',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 6.70,
+        price: 67000,
         emoji: '🌯',
         transform: '-rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'nachos-mega-17',
@@ -511,10 +563,10 @@ export class FoodStore {
         subtitle: 'چیپس ذرت ترد با پنیر چدار آب‌شده و سالسا',
         badge: '۲۵٪-',
         badgeType: 'discount',
-        price: 5.20,
+        price: 52000,
         emoji: '🧀',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'quesadilla-17',
@@ -522,10 +574,10 @@ export class FoodStore {
         subtitle: 'نان تورتیلا برشته با مرغ و پنیر فراوان',
         badge: 'غذای سرآشپز',
         badgeType: 'chef',
-        price: 7.40,
+        price: 74000,
         emoji: '🫓',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'fajita-17',
@@ -533,10 +585,10 @@ export class FoodStore {
         subtitle: 'همراه فلفل دلمه‌ای رنگی گریل شده',
         badge: 'گریل شده',
         badgeType: 'grilled',
-        price: 7.90,
+        price: 79000,
         emoji: '🥘',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'pizza-sicilia-17',
@@ -544,10 +596,10 @@ export class FoodStore {
         subtitle: 'پیتزا مخصوص ایتالیایی',
         badge: '۲۵٪-',
         badgeType: 'discount',
-        price: 8.99,
+        price: 85000,
         emoji: '🍕',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
     ],
     18: [
@@ -557,10 +609,10 @@ export class FoodStore {
         subtitle: 'سالمون نروژی، میگو و آووکادو',
         badge: 'غذای سرآشپز',
         badgeType: 'chef',
-        price: 11.50,
+        price: 115000,
         emoji: '🍣',
         transform: 'rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'salmon-steak-18',
@@ -568,10 +620,10 @@ export class FoodStore {
         subtitle: 'همراه سبزیجات بخارپز و لیمو ترش',
         badge: 'رژیمی و سالم',
         badgeType: 'chef',
-        price: 13.20,
+        price: 132000,
         emoji: '🐟',
         transform: '-rotate-6 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'fried-shrimp-18',
@@ -579,10 +631,10 @@ export class FoodStore {
         subtitle: '۶ عدد میگو درشت ترد طلایی',
         badge: '۲۰٪-',
         badgeType: 'discount',
-        price: 9.80,
+        price: 98000,
         emoji: '🍤',
         transform: 'rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'quinoa-salad-18',
@@ -590,10 +642,10 @@ export class FoodStore {
         subtitle: 'با سبزیجات تازه ارگانیک و زیتون',
         badge: 'سالم و رژیمی',
         badgeType: 'popular',
-        price: 6.50,
+        price: 65000,
         emoji: '🥗',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'pasta-seafood-18',
@@ -601,10 +653,10 @@ export class FoodStore {
         subtitle: 'با سس دست‌ساز و پنیر پارمسان',
         badge: '۱۵٪-',
         badgeType: 'discount',
-        price: 9.15,
+        price: 92000,
         emoji: '🍝',
         transform: '-rotate-12 scale-110',
-        category: 'food',
+        category: 'main',
       },
       {
         id: 'burger-18',
@@ -612,25 +664,101 @@ export class FoodStore {
         subtitle: 'برگر گوشت با پنیر چدار',
         badge: 'محبوب 🔥',
         badgeType: 'popular',
-        price: 7.50,
+        price: 75000,
         emoji: '🍔',
         transform: 'scale-110',
-        category: 'food',
+        category: 'main',
       },
     ],
   };
+
+  // نوشیدنی‌های بوفه مدرسه که پای ثابت هر روزن و بچه‌ها می‌تونن همیشه کنار غذاشون سفارش بدن
+  readonly dailyDrinks: FoodItem[] = [
+    {
+      id: 'drink-orange-daily',
+      title: 'آبمیوه طبیعی پرتقال',
+      subtitle: 'آب پرتقال تازه و ارگانیک',
+      badge: 'طبیعی',
+      badgeType: 'chef',
+      price: 25000,
+      emoji: '🧃',
+      transform: 'scale-105',
+      category: 'drinks',
+    },
+    {
+      id: 'drink-lemonade-daily',
+      title: 'لیموناد خنک نعنایی',
+      subtitle: 'نوشیدنی لیمو و نعناع تازه',
+      badge: 'خنک و تازه',
+      badgeType: 'discount',
+      price: 22000,
+      emoji: '🥤',
+      transform: 'rotate-6 scale-105',
+      category: 'drinks',
+    },
+    {
+      id: 'drink-dough-daily',
+      title: 'دوغ سنتی نعنایی',
+      subtitle: 'دوغ محلی گازدار بطری',
+      badge: 'سنتی',
+      badgeType: 'popular',
+      price: 18000,
+      emoji: '🥛',
+      transform: 'scale-105',
+      category: 'drinks',
+    },
+  ];
+
+  // دسرهای خوشمزه مدرسه که هر روز توی بوفه برای عصرانه یا بعد ناهار آماده‌س
+  readonly dailyDesserts: FoodItem[] = [
+    {
+      id: 'dessert-donut-daily',
+      title: 'دونات شکلاتی مخصوص',
+      subtitle: 'دونات نرم با روکش شکلات بلژیکی',
+      badge: 'محبوب 🔥',
+      badgeType: 'popular',
+      price: 32000,
+      emoji: '🍩',
+      transform: 'scale-110',
+      category: 'dessert',
+    },
+    {
+      id: 'dessert-jelly-daily',
+      title: 'ژله میوه‌ای رنگین‌کمان',
+      subtitle: 'ژله طبیعی بدون شکر افزوده',
+      badge: 'کم‌کالری',
+      badgeType: 'discount',
+      price: 20000,
+      emoji: '🍮',
+      transform: 'scale-105',
+      category: 'dessert',
+    },
+    {
+      id: 'dessert-muffin-daily',
+      title: 'مافین وانیل شکلاتی',
+      subtitle: 'کیک مافین اسفنجی با تکه‌های کاکائو',
+      badge: 'عصرانه',
+      badgeType: 'chef',
+      price: 24000,
+      emoji: '🧁',
+      transform: 'scale-105',
+      category: 'dessert',
+    },
+  ];
 
   // Legacy categories retained for compatibility if needed
   readonly categories = signal<CategoryItem[]>([
     {id: 'all', title: 'همه', emoji: '🍲', offsetY: 0},
   ]);
   readonly selectedCategoryId = signal<string>('all');
-
-  // Reactive state
+  // متن جستجو
   readonly searchQuery = signal<string>('');
-  readonly cart = signal<Record<string, number>>({
-    'pizza-sicilia': 1,
-  });
+  // وضعیت سبد خرید ناهار مدرسه؛ پیش‌فرض خالی است تا کارت‌ها در وضعیت اولیه انتخاب‌نشده باشند
+  readonly cart = signal<Record<string, number>>({});
+  // نوع پرس انتخابی برای هر غذا (کامل یا نیم پرس)
+  readonly portions = signal<Record<string, 'کامل' | 'نیم پرس'>>({});
+  // این متغیر نشون میده والد خودش دست به انتخاب یا تغییر فرزند زده، تا انتخابش الکی بازنویسی نشه
+  readonly isExplicitChildSelected = signal<boolean>(false);
   readonly activeNavTab = signal<NavTabId>('home');
   readonly isCartDrawerOpen = signal<boolean>(false);
   readonly isOrdersDrawerOpen = signal<boolean>(false);
@@ -642,10 +770,10 @@ export class FoodStore {
     {
       id: 'ORD-1042',
       childId: 'child-1',
-      childName: 'آرتین احمدی',
+      childName: 'علی احمدی',
       childAvatar: '👦',
-      school: 'دبستان غیردولتی سرو',
-      grade: 'کلاس ۵۰۲',
+      school: 'مدرسه نمونه',
+      grade: 'کلاس پنجم',
       foodTitle: 'چلو جوجه کباب زعفرانی',
       foodSubtitle: 'همراه با برنج درجه یک ایرانی، گوجه کبابی و زیتون پرورده',
       foodEmoji: '🍗',
@@ -693,10 +821,10 @@ export class FoodStore {
     {
       id: 'ORD-1015',
       childId: 'child-1',
-      childName: 'آرتین احمدی',
+      childName: 'علی احمدی',
       childAvatar: '👦',
-      school: 'دبستان غیردولتی سرو',
-      grade: 'کلاس ۵۰۲',
+      school: 'مدرسه نمونه',
+      grade: 'کلاس پنجم',
       foodTitle: 'چلو کباب کوبیده سنتی ممتاز',
       foodSubtitle: 'دو سیخ کوبیده همراه با برنج قالبی زعفرانی و دوغ',
       foodEmoji: '🥩',
@@ -749,7 +877,7 @@ export class FoodStore {
       id: 'TX-94821',
       title: 'شارژ آنلاین کیف پول',
       subtitle: 'درگاه شاپرک • بانک سامان',
-      amount: 200000,
+      amount: 50000,
       type: 'deposit',
       date: 'امروز، ۱۰:۳۰',
       trackingCode: '۹۸۴۷۱۲',
@@ -757,14 +885,14 @@ export class FoodStore {
     },
     {
       id: 'TX-94510',
-      title: 'رزرو ناهار آرتین',
-      subtitle: 'چلو جوجه کباب زعفرانی • دبستان سرو',
+      title: 'رزرو ناهار علی',
+      subtitle: 'چلو جوجه کباب زعفرانی • مدرسه نمونه',
       amount: 185000,
       type: 'purchase',
       date: 'دیروز، ۱۲:۱۵',
       trackingCode: '۵۸۳۹۱۰',
       status: 'successful',
-      childName: 'آرتین احمدی',
+      childName: 'علی احمدی',
     },
     {
       id: 'TX-94108',
@@ -800,12 +928,12 @@ export class FoodStore {
     },
   ]);
 
-  // Filtered food items based on selected date and search query
+  // فیلتر کردن غذاها بر اساس تاریخ و سرچ والد با استفاده از مدولوی امن
   readonly filteredFoods = computed(() => {
     const day = this.selectedDay();
     const query = this.searchQuery().trim().toLowerCase();
-    // Use modulo fallback if this exact date is not keyed, so any chosen day has full meal options
-    const mappedDay = this.foodsByDate[day] ? day : (((day - 12) % 7) + 12);
+    // اینجا مدولو رو امن کردیم تا اگه احیاناً عدد منفی یا خارج بازه اومد، خطا نده و روز معتبر بده
+    const mappedDay = this.foodsByDate[day] ? day : (((((day - 12) % 7) + 7) % 7) + 12);
     const list = this.foodsByDate[day] || this.foodsByDate[mappedDay] || this.foodsByDate[15] || [];
 
     if (!query) return list;
@@ -819,11 +947,26 @@ export class FoodStore {
     });
   });
 
-  // All foods flattened for cart lookup
+  // تجمیع تمام غذاها، نوشیدنی‌ها و دسرهای روزانه بوفه جهت محاسبه قیمت و رندر سبد خرید
   readonly foods = computed(() => {
     const map = new Map<string, FoodItem>();
     for (const items of Object.values(this.foodsByDate)) {
       for (const item of items) {
+        if (!map.has(item.id)) {
+          map.set(item.id, item);
+        }
+      }
+    }
+    // آیتم‌های ثابت و همیشگی بوفه مدرسه رو هم حتماً اضافه می‌کنیم که اگه سفارش داده شدن، قیمتشون صفر نیفته
+    if (this.dailyDrinks) {
+      for (const item of this.dailyDrinks) {
+        if (!map.has(item.id)) {
+          map.set(item.id, item);
+        }
+      }
+    }
+    if (this.dailyDesserts) {
+      for (const item of this.dailyDesserts) {
         if (!map.has(item.id)) {
           map.set(item.id, item);
         }
@@ -889,15 +1032,150 @@ export class FoodStore {
     return this.cart()[foodId] || 0;
   }
 
+  // تنظیم نوع پرس (کامل یا نیم پرس) برای غذای انتخابی
+  setPortion(foodId: string, portion: 'کامل' | 'نیم پرس'): void {
+    this.portions.update((prev) => ({
+      ...prev,
+      [foodId]: portion,
+    }));
+  }
+
+  // دریافت نوع پرس فعلی غذا (پیش‌فرض پرس کامل)
+  getPortion(foodId: string): 'کامل' | 'نیم پرس' {
+    return this.portions()[foodId] || 'کامل';
+  }
+
+  // روزهای فعال تقویم؛ اگر از تقویم آمده باشد همان روزها، وگرنه پیش‌فرض ۱۰ روزه کاری مدرسه
+  readonly activeCalendarDays = computed(() => {
+    const days = this.selectedCalendarDays();
+    if (days.length > 0) {
+      return days;
+    }
+    return [15, 16, 17, 18, 19, 22, 23, 24, 25, 26];
+  });
+
+  // روزهایی که کاربر غذایشان را انتخاب کرده و با زدن «ادامه» نهایی و نارنجی شده‌اند
+  readonly confirmedDays = signal<number[]>([]);
+
+  // ثبت تایید شدن یک روز وقتی کاربر دکمه «ادامه» رو می‌زنه
+  confirmDay(day: number): void {
+    if (!this.confirmedDays().includes(day)) {
+      this.confirmedDays.update((days) => [...days, day].sort((a, b) => a - b));
+    }
+  }
+
+  // لغو تایید یک روز در صورتی که کاربر غذاش رو حذف کرد
+  unconfirmDay(day: number): void {
+    this.confirmedDays.update((days) => days.filter((d) => d !== day));
+  }
+
+  // بررسی این‌که آیا برای این روز غذا انتخاب شده و دکمه ادامه هم زده شده (روز نارنجی و تیک‌دار)
+  isDayCompleted(day: number): boolean {
+    return this.confirmedDays().includes(day);
+  }
+
+  // بررسی این‌که آیا در حال حاضر برای این روز غذایی انتخاب شده یا نه (برای روشن شدن دکمه نارنجی ادامه)
+  hasMealForDay(day: number): boolean {
+    const selection = this.dayMealSelections()[day];
+    return !!selection && selection.quantity > 0;
+  }
+
+  // لیست روزهایی که ناهارشان مشخص و اوکی شده
+  readonly completedDays = computed(() => {
+    return this.activeCalendarDays().filter((d) => this.isDayCompleted(d));
+  });
+
+  // تعداد روزهای باقی‌مانده که هنوز غذایی برای آن‌ها انتخاب نشده
+  readonly remainingDaysCount = computed(() => {
+    const total = this.activeCalendarDays().length;
+    const completed = this.completedDays().length;
+    return Math.max(0, total - completed);
+  });
+
+  // ثبت یا تغییر غذای یک روز خاص در فلو سفارش
+  setMealForDay(day: number, foodId: string, portion: 'کامل' | 'نیم پرس' = 'کامل', quantity = 1): void {
+    const prev = this.dayMealSelections()[day];
+    if (prev && prev.foodId !== foodId) {
+      for (let i = 0; i < prev.quantity; i++) {
+        this.removeFromCart(prev.foodId);
+      }
+    }
+
+    const prevQty = prev && prev.foodId === foodId ? prev.quantity : 0;
+    const diff = quantity - prevQty;
+    if (diff > 0) {
+      for (let i = 0; i < diff; i++) {
+        this.addToCart(foodId);
+      }
+    } else if (diff < 0) {
+      for (let i = 0; i < Math.abs(diff); i++) {
+        this.removeFromCart(foodId);
+      }
+    }
+
+    this.dayMealSelections.update((map) => ({
+      ...map,
+      [day]: {foodId, portion, quantity},
+    }));
+
+    this.setPortion(foodId, portion);
+  }
+
+  // لغو انتخاب غذای یک روز خاص
+  removeMealForDay(day: number): void {
+    this.unconfirmDay(day);
+    const prev = this.dayMealSelections()[day];
+    if (prev) {
+      for (let i = 0; i < prev.quantity; i++) {
+        this.removeFromCart(prev.foodId);
+      }
+      this.dayMealSelections.update((map) => {
+        const copy = {...map};
+        delete copy[day];
+        return copy;
+      });
+    }
+  }
+
+  // هدایت هوشمند به اولین روز باقی‌مانده در لیست
+  goToNextRemainingDay(): void {
+    const days = this.activeCalendarDays();
+    const current = this.selectedDay();
+    const currentIndex = days.indexOf(current);
+
+    // ابتدا در روزهای بعدی دنبال روز خالی می‌گردیم
+    for (let i = currentIndex + 1; i < days.length; i++) {
+      if (!this.isDayCompleted(days[i])) {
+        this.selectedDay.set(days[i]);
+        return;
+      }
+    }
+    // اگر در روزهای بعد نبود، از ابتدای لیست تا روز جاری می‌گردیم
+    for (let i = 0; i <= currentIndex; i++) {
+      if (!this.isDayCompleted(days[i])) {
+        this.selectedDay.set(days[i]);
+        return;
+      }
+    }
+    // اگر همه روزها کامل شده باشند، به آخرین روز یا اولین روز می‌رویم
+    if (currentIndex < days.length - 1) {
+      this.selectedDay.set(days[currentIndex + 1]);
+    }
+  }
+
   orderForChild(childId: string): void {
     this.selectedChildId.set(childId);
+    this.isExplicitChildSelected.set(true);
     this.goToCalendar();
   }
 
   goToCalendar(): void {
+    // هنگام ورود به تقویم، هیچ روزی نباید از قبل انتخاب شده باشد و روزهای تاییدشده ریست می‌شوند
+    this.selectedCalendarDays.set([]);
+    this.confirmedDays.set([]);
     this.activePage.set('calendar');
     if (typeof window !== 'undefined') {
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      window.scrollTo(0, 0);
     }
   }
 
@@ -914,16 +1192,19 @@ export class FoodStore {
     }));
     this.dateDays.set(newDateDays);
 
-    // Set selected active day to first selected day if current is not in list
-    if (!sorted.includes(this.selectedDay())) {
-      this.selectedDay.set(sorted[0]);
-    }
+    // روز فعال همیشه و بدون استثنا روی اولین روز انتخاب‌شده تقویم قرار می‌گیرد
+    this.selectedDay.set(sorted[0]);
+
+    // روزهای تاییدشده ریست می‌شوند تا فلو از ابتدا با انتخاب غذا و زدن ادامه پیش رود
+    this.confirmedDays.set([]);
 
     // Proceed to meals page
     this.goToMeals();
   }
 
   goToMeals(): void {
+    // پاکسازی سرچ‌کوئری مارکت‌پلیس تا آیتم‌های ناهار غیب نشوند
+    this.searchQuery.set('');
     this.activePage.set('meals');
     if (typeof window !== 'undefined') {
       window.scrollTo({top: 0, behavior: 'smooth'});
@@ -985,6 +1266,11 @@ export class FoodStore {
     }
   }
 
+  // باز کردن مستقیم و صریح کشوی سبد خرید
+  openCartDrawer(): void {
+    this.isCartDrawerOpen.set(true);
+  }
+
   toggleCartDrawer(): void {
     this.isCartDrawerOpen.update((open) => !open);
   }
@@ -1036,4 +1322,29 @@ export class FoodStore {
 
     this.walletTransactions.update((txs) => [newTx, ...txs]);
   }
+
+  // انتخاب مستقیم فرزند برای ثبت سفارش یا بررسی وضعیت
+  selectChild(childId: string): void {
+    this.selectedChildId.set(childId);
+    this.isExplicitChildSelected.set(true);
+  }
+
+  // سوئیچ سریع بین فرزندان تا والد بتونه با یه کلیک ساده، بچه بعدی رو انتخاب کنه
+  cycleNextChild(): void {
+    const list = this.children();
+    if (!list || list.length === 0) return;
+    const currentId = this.selectedChildId();
+    const currentIndex = list.findIndex((c) => c.id === currentId);
+    const nextIndex = (currentIndex + 1) % list.length;
+    this.selectedChildId.set(list[nextIndex].id);
+    this.isExplicitChildSelected.set(true);
+  }
 }
+
+// تابع کمکی برای تبدیل اعداد انگلیسی به ارقام فارسی روان و تمیز
+export function toPersianDigits(value: number | string): string {
+  const str = String(value);
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return str.replace(/[0-9]/g, (w) => persianDigits[+w]);
+}
+

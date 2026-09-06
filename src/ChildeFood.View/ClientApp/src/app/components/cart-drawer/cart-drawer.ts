@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
-import {FoodStore} from '../../services/food-store';
+import {FoodStore, toPersianDigits} from '../../services/food-store';
 
 @Component({
   selector: 'app-cart-drawer',
@@ -36,7 +36,7 @@ import {FoodStore} from '../../services/food-store';
           <button
             id="btn-close-cart-drawer"
             (click)="foodStore.closeCartDrawer()"
-            class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"
+            class="min-w-[40px] min-h-[40px] w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition cursor-pointer"
             aria-label="بستن">
             ✕
           </button>
@@ -53,26 +53,33 @@ import {FoodStore} from '../../services/food-store';
                 <div>
                   <h4 class="text-xs font-bold text-gray-900">{{ item.food.title }}</h4>
                   <p class="text-[10px] text-gray-400 font-medium">{{ item.food.subtitle }}</p>
-                  <p class="text-xs font-bold text-[#f97352] mt-0.5">\${{ item.food.price.toFixed(2) }}</p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-xs font-bold text-[#FF6B3D]">{{ formatPrice(item.food.price) }} تومان</span>
+                    @if (foodStore.portions()[item.food.id]) {
+                      <span [id]="'cart-item-portion-' + item.food.id" class="text-[9px] font-bold text-[#FF6B3D] bg-orange-50 border border-orange-200/60 px-1.5 py-0.5 rounded-md">
+                        {{ foodStore.getPortion(item.food.id) === 'کامل' ? 'پرس کامل' : 'نیم پرس' }}
+                      </span>
+                    }
+                  </div>
                 </div>
               </div>
 
-              <!-- Quantity Controls -->
+              <!-- کنترلرهای تعداد با جای لمس راحت و استانداردهای موبایل -->
               <div class="flex items-center space-x-2 space-x-reverse">
                 <button
                   [id]="'cart-decrease-' + item.food.id"
                   (click)="foodStore.removeFromCart(item.food.id)"
-                  class="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-700 flex items-center justify-center font-bold hover:bg-gray-50 active:scale-95 transition"
+                  class="min-w-[36px] min-h-[36px] w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-700 flex items-center justify-center font-bold hover:bg-gray-50 active:scale-95 transition cursor-pointer"
                   aria-label="کاهش">
                   -
                 </button>
-                <span class="text-xs font-bold text-gray-900 min-w-[16px] text-center font-mono">
+                <span class="text-xs font-bold text-gray-900 min-w-[20px] text-center font-mono">
                   {{ item.count }}
                 </span>
                 <button
                   [id]="'cart-increase-' + item.food.id"
                   (click)="foodStore.addToCart(item.food.id)"
-                  class="w-7 h-7 rounded-full bg-[#17191d] text-white flex items-center justify-center font-bold hover:bg-black active:scale-95 transition"
+                  class="min-w-[36px] min-h-[36px] w-9 h-9 rounded-full bg-[#17191d] text-white flex items-center justify-center font-bold hover:bg-black active:scale-95 transition cursor-pointer"
                   aria-label="افزایش">
                   +
                 </button>
@@ -91,7 +98,7 @@ import {FoodStore} from '../../services/food-store';
           <div class="pt-3 border-t border-gray-100 space-y-2">
             <div class="flex justify-between items-center text-xs text-gray-500">
               <span>مبلغ کل سفارش:</span>
-              <span class="font-bold text-gray-900 font-mono text-sm">\${{ foodStore.totalCartPrice().toFixed(2) }}</span>
+              <span class="font-bold text-gray-900 font-mono text-sm">{{ formatPrice(foodStore.totalCartPrice()) }} تومان</span>
             </div>
             <div class="flex justify-between items-center text-xs text-gray-500">
               <span>هزینه ارسال:</span>
@@ -107,9 +114,9 @@ import {FoodStore} from '../../services/food-store';
                 id="btn-submit-order"
                 (click)="submitOrder()"
                 type="button"
-                class="w-full py-3.5 bg-[#f97352] text-white font-bold text-sm rounded-full shadow-lg hover:bg-[#e05e3e] active:scale-98 transition flex items-center justify-center space-x-2 space-x-reverse">
+                class="min-h-[48px] w-full py-3.5 bg-[#FF6B3D] text-white font-bold text-sm rounded-full shadow-lg hover:bg-[#e05432] active:scale-98 transition flex items-center justify-center space-x-2 space-x-reverse cursor-pointer">
                 <span>تکمیل و پرداخت سفارش</span>
-                <span class="font-mono text-xs opacity-90">(\${{ foodStore.totalCartPrice().toFixed(2) }})</span>
+                <span class="font-mono text-xs opacity-90">({{ formatPrice(foodStore.totalCartPrice()) }} تومان)</span>
               </button>
             }
           </div>
@@ -132,6 +139,11 @@ export class CartDrawer {
       })
       .filter((item): item is {food: typeof allFoods[0]; count: number} => item !== null && item.count > 0);
   });
+
+  // تبدیل قیمت به تومان و اعداد فارسی تمیز
+  formatPrice(price: number): string {
+    return toPersianDigits(price);
+  }
 
   submitOrder(): void {
     this.orderSubmitted.set(true);
