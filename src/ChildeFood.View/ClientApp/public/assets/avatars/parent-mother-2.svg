@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- گرادیان پس‌زمینه فیروزه‌ای نعنایی آرامش‌بخش -->
+    <linearGradient id="bg-pm2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0FDF4"/>
+      <stop offset="100%" stop-color="#BBF7D0"/>
+    </linearGradient>
+    <!-- گرادیان کت بلیزر مرجانی شیک -->
+    <linearGradient id="blazer-pm2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E"/>
+      <stop offset="100%" stop-color="#BE123C"/>
+    </linearGradient>
+    <!-- گرادیان پوست -->
+    <linearGradient id="skin-pm2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FEE4D2"/>
+      <stop offset="100%" stop-color="#F8C4A0"/>
+    </linearGradient>
+    <!-- گرادیان موهای بلوطی تیره براق -->
+    <linearGradient id="hair-pm2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#271811"/>
+      <stop offset="100%" stop-color="#180F0B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- دایره پس‌زمینه -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-pm2)" stroke="#86EFAC" stroke-width="2.5"/>
+
+  <!-- شانه و کت بلیزر اداری -->
+  <path d="M22 116 C22 92 36 84 60 84 C84 84 98 92 98 116 Z" fill="url(#blazer-pm2)"/>
+  
+  <!-- تاپ کرم ابریشمی زیر کت -->
+  <polygon points="60,116 48,84 60,88 72,84" fill="#FFFBEB"/>
+
+  <!-- گردن کشیده و ظریف -->
+  <rect x="53" y="68" width="14" height="18" rx="4" fill="#F8C4A0"/>
+
+  <!-- گوجه موی بالای سر (Bun) شیک -->
+  <circle cx="60" cy="18" r="14" fill="url(#hair-pm2)"/>
+  <circle cx="60" cy="18" r="11" fill="#382319" opacity="0.6"/>
+
+  <!-- گوشواره‌های مرواریدی شیک -->
+  <circle cx="34" cy="58" r="3.2" fill="#FFFFFF"/>
+  <circle cx="86" cy="58" r="3.2" fill="#FFFFFF"/>
+  <circle cx="34" cy="58" r="1" fill="#E2E8F0"/>
+  <circle cx="86" cy="58" r="1" fill="#E2E8F0"/>
+
+  <!-- صورت بیضی متناسب -->
+  <ellipse cx="60" cy="52" rx="22" ry="24" fill="url(#skin-pm2)"/>
+
+  <!-- گونه‌های برجسته با رژگونه صورتی هلویی -->
+  <circle cx="44" cy="58" r="4" fill="#FB7185" opacity="0.3"/>
+  <circle cx="76" cy="58" r="4" fill="#FB7185" opacity="0.3"/>
+
+  <!-- عینک مدرن گرد با فریم کهربایی/طلایی شیک -->
+  <!-- لنز چپ -->
+  <circle cx="48" cy="50" r="9" fill="#F0FDFA" fill-opacity="0.4" stroke="#D97706" stroke-width="2"/>
+  <!-- لنز راست -->
+  <circle cx="72" cy="50" r="9" fill="#F0FDFA" fill-opacity="0.4" stroke="#D97706" stroke-width="2"/>
+  <!-- پل بینی عینک -->
+  <path d="M57 49 Q60 47 63 49" stroke="#D97706" stroke-width="2" fill="none"/>
+  <!-- دسته‌های عینک -->
+  <path d="M39 50 L34 49 M81 50 L86 49" stroke="#D97706" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- چشم‌ها داخل شیشه عینک -->
+  <ellipse cx="48" cy="50" rx="2.8" ry="3" fill="#1E293B"/>
+  <ellipse cx="72" cy="50" rx="2.8" ry="3" fill="#1E293B"/>
+  <circle cx="47.2" cy="48.8" r="1" fill="#FFFFFF"/>
+  <circle cx="71.2" cy="48.8" r="1" fill="#FFFFFF"/>
+
+  <!-- ابروهای خوش‌حالت بالای فریم عینک -->
+  <path d="M41 38 Q47 35 54 37" stroke="#271811" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M66 37 Q73 35 79 38" stroke="#271811" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+
+  <!-- بینی -->
+  <path d="M59 53 Q60 56 62 54" stroke="#E69566" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+
+  <!-- لبخند شاداب با لب‌های جذاب کالباسی -->
+  <path d="M52 64 Q60 70 68 64" stroke="#E11D48" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M54 64 Q60 67 66 64" fill="#FDA4AF" opacity="0.6"/>
+
+  <!-- موهای جلوی سر آراسته با فرق کج -->
+  <path d="M38 46 C36 30 48 24 60 24 C72 24 84 30 82 46 C76 36 68 34 58 35 C46 36 40 40 38 46 Z" fill="url(#hair-pm2)"/>
+</svg>

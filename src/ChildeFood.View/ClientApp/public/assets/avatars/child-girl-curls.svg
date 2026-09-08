@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- گرادیان پس‌زمینه هلویی لطیف -->
+    <linearGradient id="bg-cgc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF7ED"/>
+      <stop offset="100%" stop-color="#FED7AA"/>
+    </linearGradient>
+    <!-- پیراهن صورتی مرجانی -->
+    <linearGradient id="shirt-cgc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FB7185"/>
+      <stop offset="100%" stop-color="#E11D48"/>
+    </linearGradient>
+    <!-- گرادیان پوست -->
+    <linearGradient id="skin-cgc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FDDEC7"/>
+      <stop offset="100%" stop-color="#F7C4A5"/>
+    </linearGradient>
+    <!-- موهای فر شاه‌بلوطی تیره -->
+    <linearGradient id="hair-cgc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4E2310"/>
+      <stop offset="100%" stop-color="#2D1307"/>
+    </linearGradient>
+  </defs>
+
+  <!-- دایره پس‌زمینه -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-cgc)" stroke="#FDBA74" stroke-width="2.5"/>
+
+  <!-- موهای فر پشت سر و اطراف گوش -->
+  <circle cx="28" cy="48" r="10" fill="url(#hair-cgc)"/>
+  <circle cx="26" cy="62" r="9" fill="url(#hair-cgc)"/>
+  <circle cx="92" cy="48" r="10" fill="url(#hair-cgc)"/>
+  <circle cx="94" cy="62" r="9" fill="url(#hair-cgc)"/>
+
+  <!-- بالاتنه لباس دخترانه -->
+  <path d="M26 116 C26 92 38 82 60 82 C82 82 94 92 94 116 Z" fill="url(#shirt-cgc)"/>
+  <path d="M48 84 C54 88 59 86 60 84 C61 86 66 88 72 84 C68 92 52 92 48 84 Z" fill="#FFFFFF"/>
+
+  <!-- گردن -->
+  <rect x="53" y="70" width="14" height="15" rx="3" fill="#F7C4A5"/>
+
+  <!-- گوش‌ها -->
+  <circle cx="35" cy="57" r="6" fill="#F7C4A5"/>
+  <circle cx="85" cy="57" r="6" fill="#F7C4A5"/>
+
+  <!-- صورت گرد -->
+  <ellipse cx="60" cy="55" rx="22" ry="24" fill="url(#skin-cgc)"/>
+
+  <!-- گونه‌ها -->
+  <circle cx="45" cy="61" r="4.5" fill="#FB7185" opacity="0.4"/>
+  <circle cx="75" cy="61" r="4.5" fill="#FB7185" opacity="0.4"/>
+
+  <!-- چشم‌های خندان و درشت -->
+  <circle cx="49" cy="53" r="3.2" fill="#1E293B"/>
+  <circle cx="71" cy="53" r="3.2" fill="#1E293B"/>
+  <circle cx="48" cy="51.5" r="1.2" fill="#FFFFFF"/>
+  <circle cx="70" cy="51.5" r="1.2" fill="#FFFFFF"/>
+  <circle cx="50.2" cy="54" r="0.6" fill="#FFFFFF"/>
+  <circle cx="72.2" cy="54" r="0.6" fill="#FFFFFF"/>
+
+  <!-- مژه‌های ناز -->
+  <path d="M46 50 Q48 48 51 50" stroke="#2D1307" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  <path d="M69 50 Q72 48 74 50" stroke="#2D1307" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+
+  <!-- ابروها -->
+  <path d="M45 46 Q49 44 53 46" stroke="#4E2310" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <path d="M67 46 Q71 44 75 46" stroke="#4E2310" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+  <!-- بینی -->
+  <path d="M59 56 Q60 59 61 56" stroke="#E69566" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- لبخند شاد -->
+  <path d="M53 64 Q60 70 67 64" stroke="#BE185D" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M54 64 Q60 67 66 64" fill="#FDA4AF" opacity="0.6"/>
+
+  <!-- تل‌سر قرمز و پاپیون روی موها -->
+  <path d="M34 44 C34 26 44 20 60 20 C76 20 86 26 86 44" stroke="#DC2626" stroke-width="3.5" fill="none"/>
+  <!-- پاپیون بالای تل سمت چپ -->
+  <path d="M42 22 C36 18 36 28 42 24 C48 20 48 26 42 22 Z" fill="#EF4444"/>
+  <circle cx="42" cy="23" r="2.5" fill="#B91C1C"/>
+
+  <!-- فر موهای جلوی سر روی پیشانی -->
+  <circle cx="44" cy="32" r="7" fill="url(#hair-cgc)"/>
+  <circle cx="56" cy="30" r="8" fill="url(#hair-cgc)"/>
+  <circle cx="68" cy="30" r="8" fill="url(#hair-cgc)"/>
+  <circle cx="76" cy="34" r="7" fill="url(#hair-cgc)"/>
+</svg>

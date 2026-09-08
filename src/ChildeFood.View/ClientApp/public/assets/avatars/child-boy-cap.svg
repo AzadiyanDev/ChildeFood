@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- گرادیان پس‌زمینه سبز نعنایی -->
+    <linearGradient id="bg-cbc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0FDF4"/>
+      <stop offset="100%" stop-color="#BBF7D0"/>
+    </linearGradient>
+    <!-- گرادیان کلاه بیسبال قرمز اسپرت -->
+    <linearGradient id="cap-cbc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
+    </linearGradient>
+    <!-- پیراهن اسپرت -->
+    <linearGradient id="shirt-cbc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <!-- گرادیان پوست -->
+    <linearGradient id="skin-cbc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FDDEC7"/>
+      <stop offset="100%" stop-color="#F7C4A5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- دایره پس‌زمینه -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-cbc)" stroke="#86EFAC" stroke-width="2.5"/>
+
+  <!-- شانه و لباس ورزشی -->
+  <path d="M26 116 C26 92 38 82 60 82 C82 82 94 92 94 116 Z" fill="url(#shirt-cbc)"/>
+  <!-- یقه تیشرت سفید -->
+  <polygon points="60,94 50,82 60,86 70,82" fill="#FFFFFF"/>
+
+  <!-- گردن -->
+  <rect x="53" y="70" width="14" height="15" rx="3" fill="#F7C4A5"/>
+
+  <!-- گوش‌ها -->
+  <circle cx="35" cy="56" r="6.5" fill="#F7C4A5"/>
+  <circle cx="85" cy="56" r="6.5" fill="#F7C4A5"/>
+
+  <!-- صورت گرد پرانرژی -->
+  <ellipse cx="60" cy="54" rx="23" ry="25" fill="url(#skin-cbc)"/>
+
+  <!-- گونه‌ها -->
+  <circle cx="44" cy="61" r="4" fill="#FB923C" opacity="0.3"/>
+  <circle cx="76" cy="61" r="4" fill="#FB923C" opacity="0.3"/>
+
+  <!-- چشم‌های خندان و باهوش -->
+  <circle cx="48" cy="53" r="3.2" fill="#1E293B"/>
+  <circle cx="72" cy="53" r="3.2" fill="#1E293B"/>
+  <circle cx="47" cy="51.5" r="1.1" fill="#FFFFFF"/>
+  <circle cx="71" cy="51.5" r="1.1" fill="#FFFFFF"/>
+
+  <!-- ابروها -->
+  <path d="M43 46 Q47 43 53 45" stroke="#1F2937" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M67 45 Q73 43 77 46" stroke="#1F2937" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+
+  <!-- بینی فندقی -->
+  <path d="M59 56 Q60 59 62 56" stroke="#E08E60" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+  <!-- لبخند شاداب -->
+  <path d="M50 64 Q60 72 70 64" stroke="#991B1B" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+
+  <!-- کلاه بیسبال اسپرت لبه‌دار قرمز با لوگوی ستاره -->
+  <path d="M34 40 C34 22 46 16 60 16 C74 16 86 22 86 40 Z" fill="url(#cap-cbc)"/>
+  <!-- نقاب کلاه لبه‌دار مایل به جلو -->
+  <path d="M28 40 C36 40 48 42 66 38 C80 34 88 40 92 42 C84 48 38 48 28 40 Z" fill="#991B1B"/>
+  <!-- دکمه بالای کلاه -->
+  <circle cx="60" cy="16" r="2.5" fill="#7F1D1D"/>
+  <!-- ستاره سفید روی کلاه -->
+  <polygon points="60,24 61.5,27 65,27.5 62.5,30 63,33.5 60,32 57,33.5 57.5,30 55,27.5 58.5,27" fill="#FFFFFF"/>
+</svg>

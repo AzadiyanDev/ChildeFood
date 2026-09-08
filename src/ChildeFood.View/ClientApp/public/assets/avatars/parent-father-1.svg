@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- گرادیان پس‌زمینه گرد نیلی ملایم -->
+    <linearGradient id="bg-pf1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EEF2FF"/>
+      <stop offset="100%" stop-color="#C7D2FE"/>
+    </linearGradient>
+    <!-- گرادیان کت سرمه‌ای شیک -->
+    <linearGradient id="suit-pf1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <!-- گرادیان کراوات بنفش باوقار -->
+    <linearGradient id="tie-pf1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+    <!-- گرادیان پوست گرم -->
+    <linearGradient id="skin-pf1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FCD3B6"/>
+      <stop offset="100%" stop-color="#F7BA91"/>
+    </linearGradient>
+    <!-- گرادیان موهای قهوه‌ای تیره مرتب -->
+    <linearGradient id="hair-pf1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#332219"/>
+      <stop offset="100%" stop-color="#1C130E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- دایره پس‌زمینه با حاشیه نرم -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-pf1)" stroke="#A5B4FC" stroke-width="2.5"/>
+
+  <!-- شانه و کت رسمی -->
+  <path d="M22 116 C22 90 36 82 60 82 C84 82 98 90 98 116 Z" fill="url(#suit-pf1)"/>
+  
+  <!-- یقه پیراهن سفید زیر کت -->
+  <polygon points="60,98 46,82 60,86 74,82" fill="#FFFFFF"/>
+  <polygon points="60,102 54,86 66,86" fill="#E2E8F0"/>
+
+  <!-- کراوات شیک با گره -->
+  <polygon points="56,86 64,86 63,94 57,94" fill="#4338CA"/>
+  <polygon points="57,94 63,94 66,116 54,116" fill="url(#tie-pf1)"/>
+
+  <!-- برگردان‌های یقه کت (Lapels) -->
+  <path d="M38 84 L48 116 L34 116 Z" fill="#334155" opacity="0.8"/>
+  <path d="M82 84 L72 116 L86 116 Z" fill="#334155" opacity="0.8"/>
+
+  <!-- گردن -->
+  <rect x="52" y="68" width="16" height="18" rx="4" fill="#F7BA91"/>
+  <!-- سایه زیر چانه -->
+  <path d="M52 74 Q60 80 68 74" fill="none" stroke="#E6996D" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- گوش‌ها -->
+  <circle cx="34" cy="56" r="6.5" fill="#F7BA91"/>
+  <circle cx="86" cy="56" r="6.5" fill="#F7BA91"/>
+  <circle cx="34" cy="56" r="3.5" fill="#E89B6F"/>
+  <circle cx="86" cy="56" r="3.5" fill="#E89B6F"/>
+
+  <!-- سر و صورت خوش‌تراش مردانه -->
+  <path d="M38 48 C38 34 82 34 82 48 C82 68 76 74 60 74 C44 74 38 68 38 48 Z" fill="url(#skin-pf1)"/>
+
+  <!-- چشم‌ها با برق نگاه -->
+  <ellipse cx="49" cy="53" rx="3.2" ry="3.4" fill="#1E293B"/>
+  <ellipse cx="71" cy="53" rx="3.2" ry="3.4" fill="#1E293B"/>
+  <circle cx="48" cy="51.8" r="1.1" fill="#FFFFFF"/>
+  <circle cx="70" cy="51.8" r="1.1" fill="#FFFFFF"/>
+
+  <!-- ابروهای مردانه و خوش‌فرم -->
+  <path d="M42 46 Q49 43 55 45" stroke="#2B1A12" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+  <path d="M65 45 Q71 43 78 46" stroke="#2B1A12" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+
+  <!-- بینی خوش‌فرم -->
+  <path d="M59 55 Q60 59 62 56" stroke="#E08E60" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+  <!-- لبخند گرم و باوقار -->
+  <path d="M52 64 Q60 69 68 64" stroke="#D96F43" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+
+  <!-- موهای مرتب با فرق سر -->
+  <path d="M36 46 C35 30 50 20 62 20 C76 20 86 28 85 45 C81 40 75 38 64 39 C52 40 44 42 36 46 Z" fill="url(#hair-pf1)"/>
+  <!-- خط ته ریش بسیار ملایم و جذاب -->
+  <path d="M44 64 Q60 72 76 64" stroke="#D99B77" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1 2" fill="none" opacity="0.6"/>
+</svg>

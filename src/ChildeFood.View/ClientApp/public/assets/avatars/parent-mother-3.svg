@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- گرادیان پس‌زمینه هلویی گرم -->
+    <linearGradient id="bg-pm3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF7ED"/>
+      <stop offset="100%" stop-color="#FED7AA"/>
+    </linearGradient>
+    <!-- گرادیان ژاکت بافتنی کالباسی/هلویی شیک -->
+    <linearGradient id="cardigan-pm3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FB7185"/>
+      <stop offset="100%" stop-color="#E11D48"/>
+    </linearGradient>
+    <!-- گرادیان پوست گرم -->
+    <linearGradient id="skin-pm3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FEE4D2"/>
+      <stop offset="100%" stop-color="#F8C4A0"/>
+    </linearGradient>
+    <!-- گرادیان موهای بلوطی و موج‌دار -->
+    <linearGradient id="hair-pm3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#552211"/>
+      <stop offset="100%" stop-color="#33140A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- دایره پس‌زمینه -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-pm3)" stroke="#FDBA74" stroke-width="2.5"/>
+
+  <!-- موهای پشت سر که روی شانه‌ها افتاده -->
+  <path d="M28 54 C26 78 30 102 36 116 L84 116 C90 102 94 78 92 54 Z" fill="url(#hair-pm3)"/>
+
+  <!-- بالاتنه و ژاکت کالباسی گرم -->
+  <path d="M22 116 C22 92 36 84 60 84 C84 84 98 92 98 116 Z" fill="url(#cardigan-pm3)"/>
+
+  <!-- یقه هفت ظریف زیر ژاکت -->
+  <polygon points="60,116 48,84 60,92 72,84" fill="#FFFBEB"/>
+
+  <!-- گردنبند مروارید ظریف -->
+  <path d="M50 82 Q60 88 70 82" stroke="#E2E8F0" stroke-width="1.2" fill="none"/>
+  <circle cx="60" cy="85" r="2.2" fill="#FFFFFF"/>
+
+  <!-- گردن -->
+  <rect x="53" y="68" width="14" height="18" rx="4" fill="#F8C4A0"/>
+
+  <!-- گوشواره‌های مروارید کوچک -->
+  <circle cx="34" cy="58" r="2.5" fill="#FFFFFF"/>
+  <circle cx="86" cy="58" r="2.5" fill="#FFFFFF"/>
+
+  <!-- فرم صورت مهربان -->
+  <ellipse cx="60" cy="53" rx="21" ry="23" fill="url(#skin-pm3)"/>
+
+  <!-- گونه‌های گل‌انداخته و باطراوت -->
+  <circle cx="45" cy="59" r="4.2" fill="#F43F5E" opacity="0.25"/>
+  <circle cx="75" cy="59" r="4.2" fill="#F43F5E" opacity="0.25"/>
+
+  <!-- چشم‌ها با مژه‌های ظریف و نگاه سرشار از مهر -->
+  <ellipse cx="49" cy="51" rx="3.1" ry="3.3" fill="#1E293B"/>
+  <ellipse cx="71" cy="51" rx="3.1" ry="3.3" fill="#1E293B"/>
+  <circle cx="48" cy="49.8" r="1.1" fill="#FFFFFF"/>
+  <circle cx="70" cy="49.8" r="1.1" fill="#FFFFFF"/>
+  <!-- مژه‌های بالا -->
+  <path d="M45 49 Q49 46 53 49" stroke="#1E293B" stroke-width="1.2" fill="none"/>
+  <path d="M67 49 Q71 46 75 49" stroke="#1E293B" stroke-width="1.2" fill="none"/>
+
+  <!-- ابروهای خوش‌حالت و طبیعی -->
+  <path d="M43 44 Q49 41 54 43" stroke="#451A03" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M66 43 Q71 41 77 44" stroke="#451A03" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- بینی ظریف -->
+  <path d="M59 54 Q60 57 62 55" stroke="#E69566" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- لبخند مهربان و آرامش‌بخش -->
+  <path d="M52 64 Q60 70 68 64" stroke="#E11D48" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M54 64 Q60 67 66 64" fill="#FDA4AF" opacity="0.5"/>
+
+  <!-- موهای جلوی سر موج‌دار و ریخته شده روی پیشانی -->
+  <path d="M34 48 C32 28 48 20 60 20 C72 20 88 28 86 48 C80 34 70 30 60 32 C48 30 40 36 34 48 Z" fill="url(#hair-pm3)"/>
+  <!-- تاب ملایم مو روی گوش چپ و راست -->
+  <path d="M36 46 C32 58 35 72 38 78 C36 72 35 58 38 48 Z" fill="#6B2D18"/>
+  <path d="M84 46 C88 58 85 72 82 78 C84 72 85 58 82 48 Z" fill="#6B2D18"/>
+</svg>
