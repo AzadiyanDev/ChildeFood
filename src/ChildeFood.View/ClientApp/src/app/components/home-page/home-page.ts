@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed, inject, signal, effect, OnDestroy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal, effect, OnDestroy, OnInit} from '@angular/core';
 import {DOCUMENT} from '@angular/common';
 import {FoodStore} from '../../services/food-store';
 
@@ -273,21 +273,27 @@ export interface HomeOrderDisplay {
             }
           </div>
         } @else {
-          <!-- وضعیت بدون سفارش امروز -->
+          <!-- وضعیت بدون سفارش امروز طبق نیازمندی: آیکون قشنگ وسط صفحه با زیرش بنویسه هیچ سفارشی ندارید -->
           <div
             id="empty-today-orders-card"
-            class="bg-white rounded-[20px] p-5 border border-dashed border-gray-200 text-center shadow-xs">
-            <span class="text-2xl block mb-1">🍱</span>
-            <p class="text-xs font-bold text-[#111111]">امروز هیچ سفارش فعالی برای مدرسه ثبت نشده است</p>
-            <p class="text-[11px] text-gray-400 font-normal mt-1">می‌توانید همین حالا غذای گرم و تازه را انتخاب و رزرو کنید.</p>
+            class="bg-white rounded-[22px] p-6 sm:p-8 border border-dashed border-gray-200 text-center shadow-xs flex flex-col items-center justify-center">
+            <div class="w-16 h-16 rounded-2xl bg-orange-50/80 border border-orange-100 flex items-center justify-center text-3xl shadow-xs mb-3">
+              <span>🍱</span>
+            </div>
+            <h3 id="empty-today-orders-title" class="text-sm sm:text-base font-bold text-[#111111] tracking-tight">
+              هیچ سفارشی ندارید
+            </h3>
+            <p class="text-[11px] text-gray-400 font-normal mt-1 max-w-[240px] leading-relaxed">
+              هنوز برای ناهار امروز مدرسه سفارشی ثبت نشده است. می‌توانید غذای گرم و تازه را انتخاب و رزرو کنید.
+            </p>
             <button
               type="button"
               id="btn-empty-order-meals"
-              (click)="foodStore.goToMeals()"
-              class="mt-3 min-h-[40px] px-4 py-1.5 rounded-full bg-orange-50 text-[#FF6B3D] hover:bg-[#FF6B3D] hover:text-white border border-orange-200/80 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5">
-              <span>مشاهده منو و انتخاب غذا</span>
-              <svg class="w-3.5 h-3.5 transform rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              (click)="foodStore.goToCalendar()"
+              class="mt-3.5 min-h-[42px] px-5 py-2 rounded-full bg-[#FF6B3D] text-white hover:bg-[#e05432] active:scale-95 shadow-md shadow-[#FF6B3D]/25 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-2">
+              <span>رزرو و ثبت سفارش ناهار</span>
+              <svg class="w-3.5 h-3.5 transform rotate-180" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </button>
           </div>
@@ -297,55 +303,60 @@ export interface HomeOrderDisplay {
 
       <!-- =========================================================================
            ۵. بخش پیشنهاد امروز غذا (DAILY FOOD RECOMMENDATION)
-           طبق فیدبک ۷: کارت جمع‌وجور و دلنشین برای پر کردن فضای خالی و هدایت والدین به منو
+           نمایش محبوب‌ترین غذای منوی روز؛ در صورت عدم وجود دیتا اصلاً نمایش داده نمی‌شود
            ========================================================================= -->
-      <section id="daily-recommendation-section" class="mb-5" data-purpose="daily-recommendation-card">
-        <div class="bg-gradient-to-r from-orange-50/90 via-white to-white rounded-[22px] p-4 border border-orange-100 shadow-[0_4px_18px_rgba(255,107,61,0.06)] hover:border-orange-200 transition-all">
-          
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-1.5">
-              <span class="text-sm font-bold text-[#111111]">پیشنهاد امروز</span>
-              <span class="text-base">🍽</span>
-            </div>
-            <span class="text-[10px] font-bold text-[#FF6B3D] bg-orange-100/70 border border-orange-200/50 px-2 py-0.5 rounded-full">
-              محبوب بچه‌ها
-            </span>
-          </div>
+      @if (dailyRecommendation()) {
+        <section id="daily-recommendation-section" class="mb-5" data-purpose="daily-recommendation-card">
+          <div class="relative overflow-hidden bg-gradient-to-l from-orange-50/70 via-white to-white rounded-[22px] p-4 border border-orange-100/90 shadow-[0_6px_22px_rgba(255,107,61,0.06)] hover:border-orange-200 transition-all">
+            
+            <!-- هایلایت نوری ملایم در گوشه کارت -->
+            <div class="absolute -top-8 -left-8 w-24 h-24 bg-[#FF6B3D]/10 rounded-full blur-2xl pointer-events-none"></div>
 
-          <p class="text-xs text-gray-500 font-normal">
-            غذای محبوب بچه‌ها:
-          </p>
-
-          <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-orange-100/60">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-orange-100/70 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
-                <span>🍗</span>
+            <div class="flex items-center justify-between mb-2 relative z-10">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold text-[#111111]">پیشنهاد امروز</span>
+                <span class="text-base">🍽</span>
               </div>
-              <div>
-                <h4 id="recommended-food-title" class="text-sm font-bold text-[#111111]">
-                  جوجه کباب
-                </h4>
-                <p class="text-[11px] text-gray-400 font-normal mt-0.5">
-                  طبخ تازه با گوشت گرم و برنج درجه یک
-                </p>
-              </div>
+              <span class="text-[10px] font-bold text-[#FF6B3D] bg-orange-100/70 border border-orange-200/50 px-2.5 py-0.5 rounded-full">
+                {{ dailyRecommendation()!.badgeText || 'محبوب بچه‌ها' }}
+              </span>
             </div>
 
-            <!-- دکمه شیک مشاهده منو با ارگونومی استاندارد ۴۴ پیکسلی -->
-            <button
-              type="button"
-              id="btn-view-recommended-menu"
-              (click)="foodStore.goToMeals()"
-              class="min-h-[44px] px-4 py-2 rounded-full bg-[#111111] hover:bg-[#222222] active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 shadow-xs">
-              <span>مشاهده منو</span>
-              <svg class="w-3.5 h-3.5 transform rotate-180 text-[#FF6B3D]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </button>
-          </div>
+            <p class="text-xs text-gray-500 font-normal relative z-10">
+              غذای محبوب بچه‌ها:
+            </p>
 
-        </div>
-      </section>
+            <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-orange-100/60 relative z-10">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-12 h-12 rounded-2xl bg-orange-100/80 border border-orange-200/50 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
+                  <span>{{ dailyRecommendation()!.emoji || '🍗' }}</span>
+                </div>
+                <div class="min-w-0">
+                  <h4 id="recommended-food-title" class="text-sm font-bold text-[#111111] truncate">
+                    {{ dailyRecommendation()!.title }}
+                  </h4>
+                  <p class="text-[11px] text-gray-400 font-normal mt-0.5 truncate max-w-[170px] sm:max-w-xs">
+                    {{ dailyRecommendation()!.subtitle || 'طبخ تازه با گوشت گرم و برنج درجه یک' }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- دکمه رزرو جهت انتقال سریع به صفحه تقویم سفارش -->
+              <button
+                type="button"
+                id="btn-view-recommended-menu"
+                (click)="foodStore.goToCalendar()"
+                class="min-h-[44px] px-4 py-2 rounded-full bg-[#111111] hover:bg-[#222222] active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 shadow-xs">
+                <span>رزرو</span>
+                <svg class="w-3.5 h-3.5 transform rotate-180 text-[#FF6B3D]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
+
+          </div>
+        </section>
+      }
 
       <!-- =========================================================================
            ۶. بخش دسترسی سریع (QUICK ACCESS SECTION)
@@ -549,7 +560,7 @@ export interface HomeOrderDisplay {
     </div>
   `,
 })
-export class HomePage implements OnDestroy {
+export class HomePage implements OnInit, OnDestroy {
   readonly foodStore = inject(FoodStore);
   private readonly document = inject(DOCUMENT);
 
@@ -566,6 +577,16 @@ export class HomePage implements OnDestroy {
         }
       }
     });
+  }
+
+  ngOnInit(): void {
+    // بارگذاری زنده اطلاعات خلاصه کیف پول، سفارش‌های امروز و پیشنهاد روز از دیتابیس
+    const user = this.foodStore.currentUser();
+    if (user && user.id) {
+      this.foodStore.loadWalletSummary(user.id);
+      this.foodStore.loadTodayOrders(user.id);
+    }
+    this.foodStore.loadTodayRecommendation();
   }
 
   ngOnDestroy(): void {
@@ -609,13 +630,19 @@ export class HomePage implements OnDestroy {
     return child.name.split(' ')[0];
   });
 
-  // موجودی زنده کیف پول با فرمت ارقام فارسی و جداکننده هزارگان
+  // موجودی زنده کیف پول با فرمت ارقام فارسی و جداکننده هزارگان مستقیماً از خلاصه والت
   readonly formattedWalletBalance = computed(() => {
-    return this.foodStore.parentProfile().walletBalance.toLocaleString('fa-IR').replace(/\u066C/g, ',');
+    const summary = this.foodStore.walletSummary();
+    const balance = summary ? summary.balance : this.foodStore.parentProfile().walletBalance;
+    return balance.toLocaleString('fa-IR').replace(/\u066C/g, ',');
   });
 
-  // آخرین مبلغ شارژ شده؛ به صورت داینامیک از تاریخچه تراکنش‌های کیف پول خوانده می‌شود
+  // آخرین مبلغ شارژ شده؛ به صورت داینامیک از ترنزکشن‌های دیتابیس خوانده می‌شود
   readonly lastRechargeAmount = computed(() => {
+    const summary = this.foodStore.walletSummary();
+    if (summary && summary.lastTransactionAmount != null && summary.lastTransactionAmount > 0) {
+      return summary.lastTransactionAmount.toLocaleString('fa-IR').replace(/\u066C/g, ',');
+    }
     const txs = this.foodStore.walletTransactions();
     const latestDeposit = txs.find((t) => t.type === 'deposit' && t.status === 'successful');
     if (latestDeposit) {
@@ -624,9 +651,18 @@ export class HomePage implements OnDestroy {
     return '۵۰,۰۰۰';
   });
 
-  // تعداد سفارش‌های این ماه والد؛ طبق نیازمندی دیزاین ۱۲ سفارش ثبت شده است
+  // تعداد سفارش‌های این ماه والد؛ مستقیماً از شمارش واقعی دیتابیس در ماه جاری خورشیدی
   readonly monthOrdersCount = computed(() => {
+    const summary = this.foodStore.walletSummary();
+    if (summary && summary.monthOrdersCount != null) {
+      return summary.monthOrdersCount.toLocaleString('fa-IR');
+    }
     return (12).toLocaleString('fa-IR');
+  });
+
+  // غذای پیشنهاد روز جهت بررسی وجود دیتا و نمایش کارت
+  readonly dailyRecommendation = computed(() => {
+    return this.foodStore.dailyRecommendation();
   });
 
   // سفارش‌های شاخص امروز برای نمایش توی کارت‌های شیک و عریض

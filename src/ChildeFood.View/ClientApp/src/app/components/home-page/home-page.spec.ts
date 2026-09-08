@@ -170,26 +170,35 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(progressEl?.textContent).toContain('آماده‌سازی');
   });
 
-  // فیدبک ۷: کارت پیشنهاد امروز غذا برای پر کردن فضای خالی و هدایت به منو
-  it('فیدبک ۷: باید کارت پیشنهاد امروز غذا با غذای محبوب جوجه کباب و دکمه مشاهده منو نمایش داده شود', () => {
+  // فیدبک ۷: کارت پیشنهاد امروز غذا با دکمه رزرو و هدایت به تقویم
+  it('فیدبک ۷: باید کارت پیشنهاد امروز غذا با غذای محبوب جوجه کباب و دکمه رزرو نمایش داده شود و به تقویم برود', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const recSection = compiled.querySelector('#daily-recommendation-section');
     expect(recSection).toBeTruthy();
 
     expect(recSection?.textContent).toContain('پیشنهاد امروز');
     expect(recSection?.textContent).toContain('🍽');
-    expect(recSection?.textContent).toContain('غذای محبوب بچه‌ها');
+    expect(recSection?.textContent).toContain('محبوب بچه‌ها');
     expect(recSection?.textContent).toContain('جوجه کباب');
 
-    const viewMenuBtn = compiled.querySelector<HTMLButtonElement>('#btn-view-recommended-menu');
-    expect(viewMenuBtn).toBeTruthy();
-    expect(viewMenuBtn?.textContent).toContain('مشاهده منو');
+    const reserveBtn = compiled.querySelector<HTMLButtonElement>('#btn-view-recommended-menu');
+    expect(reserveBtn).toBeTruthy();
+    expect(reserveBtn?.textContent).toContain('رزرو');
 
-    // کلیک روی مشاهده منو باید به صفحه انتخاب غذا برود
+    // کلیک روی دکمه رزرو باید به صفحه تقویم برود
     foodStore.activePage.set('home');
-    viewMenuBtn?.click();
+    reserveBtn?.click();
     fixture.detectChanges();
-    expect(foodStore.activePage()).toBe('meals');
+    expect(foodStore.activePage()).toBe('calendar');
+  });
+
+  it('در صورتی که هیچ پیشنهادی برای امروز وجود نداشته باشد کارت پیشنهاد اصلاً نباید نمایش داده شود', () => {
+    foodStore.dailyRecommendation.set(null);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const recSection = compiled.querySelector('#daily-recommendation-section');
+    expect(recSection).toBeNull();
   });
 
   // فیدبک ۵: دسترسی سریع بزرگتر، آیکون‌های بزرگتر و سایه عمیق‌تر
@@ -349,22 +358,23 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
   });
 
   // تست لبه ۱: وضعیت بدون سفارش
-  it('در صورت خالی بودن لیست سفارشات امروز، باید وضعیت خالی به همراه کلید هدایت به منو نمایش داده شود', () => {
+  it('در صورت خالی بودن لیست سفارشات امروز، باید وضعیت خالی با متن هیچ سفارشی ندارید به همراه کلید هدایت به تقویم نمایش داده شود', () => {
     foodStore.todayOrders.set([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const emptyCard = compiled.querySelector('#empty-today-orders-card');
     expect(emptyCard).toBeTruthy();
-    expect(emptyCard?.textContent).toContain('امروز هیچ سفارش فعالی برای مدرسه ثبت نشده است');
+    expect(emptyCard?.textContent).toContain('هیچ سفارشی ندارید');
 
     const orderBtn = compiled.querySelector<HTMLButtonElement>('#btn-empty-order-meals');
     expect(orderBtn).toBeTruthy();
+    expect(orderBtn?.textContent).toContain('رزرو و ثبت سفارش ناهار');
 
     foodStore.activePage.set('home');
     orderBtn?.click();
     fixture.detectChanges();
-    expect(foodStore.activePage()).toBe('meals');
+    expect(foodStore.activePage()).toBe('calendar');
   });
 
   // تست لبه ۲: لیست فرزندان خالی
