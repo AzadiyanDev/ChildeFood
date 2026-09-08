@@ -1,0 +1,6 @@
+@ChildeFood.View_HostAddress = http://localhost:5109
+
+GET {{ChildeFood.View_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

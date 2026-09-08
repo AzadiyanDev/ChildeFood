@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChildeFood.Application/ChildeFood.Application.csproj" />
+    <Project Path="src/ChildeFood.Domain/ChildeFood.Domain.csproj" />
+    <Project Path="src/ChildeFood.Infrastructure/ChildeFood.Infrastructure.csproj" />
+    <Project Path="src/ChildeFood.Persistence/ChildeFood.Persistence.csproj" />
+    <Project Path="src/ChildeFood.View/ChildeFood.View.csproj" />
+  </Folder>
+</Solution>

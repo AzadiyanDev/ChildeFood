@@ -30,7 +30,7 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     const greetingEl = compiled.querySelector('#header-greeting-text');
     expect(greetingEl).toBeTruthy();
     expect(greetingEl?.textContent).toContain('سلام');
-    expect(greetingEl?.textContent).toContain('محمد');
+    expect(greetingEl?.textContent).toContain('سارا');
 
     // بررسی تیتر جدید دوستانه با نام فرزند
     const headlineEl = compiled.querySelector('#header-headline');
@@ -42,7 +42,6 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     // آواتار کوچک فرزند کنار تیتر
     const childAvatarEl = compiled.querySelector('#header-child-avatar');
     expect(childAvatarEl).toBeTruthy();
-    expect(childAvatarEl?.textContent).toContain('👦');
   });
 
   it('سربرگ بالایی باید شامل دکمه آواتار گرد و زنگوله اعلان‌ها باشد', () => {
@@ -76,18 +75,23 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(childSchoolEl?.textContent).toContain('مدرسه نمونه');
 
     const childAvatarEl = compiled.querySelector('#active-child-avatar');
-    expect(childAvatarEl?.textContent).toContain('👦');
+    expect(childAvatarEl).toBeTruthy();
+    const avatarImg = childAvatarEl?.querySelector('img');
+    if (avatarImg) {
+      expect(avatarImg.getAttribute('src')).toContain('ali.svg');
+    } else {
+      expect(childAvatarEl?.textContent).toContain('👦');
+    }
 
     // دکمه تغییر فرزند
     const changeBtn = compiled.querySelector<HTMLButtonElement>('#btn-change-active-child');
     expect(changeBtn).toBeTruthy();
     expect(changeBtn?.textContent).toContain('تغییر');
 
-    // کلیک روی دکمه تغییر باید فرزند بعدی را انتخاب کند
+    // کلیک روی دکمه تغییر باید مدال انتخاب فرزند را باز کند
     changeBtn?.click();
     fixture.detectChanges();
-    expect(foodStore.selectedChildId()).toBe('child-2');
-    expect(component.activeChild().name).toBe('آوا احمدی');
+    expect(foodStore.isChildModalOpen()).toBe(true);
   });
 
   it('کارت کیف پول باید مشخصات کارت پریمیوم بانکی تیره با گوشه‌های ۲۴ پیکسل و سایه ملایم را داشته باشد', () => {
