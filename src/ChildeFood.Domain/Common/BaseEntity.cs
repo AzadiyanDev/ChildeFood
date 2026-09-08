@@ -1,8 +1,8 @@
 namespace ChildeFood.Domain.Common;
 
-// این کلاس پایه تمام انتیتی‌های پروژه‌مونه تا آیدی و زمان ثبت رو همه داشته باشن و نخوایم هی تکرارشون کنیم.
+// این کلاس ریشه تمام انتیتی‌هامونه؛ آیدی گویید (Guid) و زمان ثبت رو اینجا میذاریم تا نخوایم توی تک‌تک انتیتی‌ها تکرارشون کنیم.
 public abstract class BaseEntity
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -24,9 +24,9 @@ public class FoodsController : ControllerBase
         return Ok(result);
     }
 
-    // گرفتن جزئیات یک غذای خاص با آیدی
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<FoodItemDto>> GetById(int id, CancellationToken cancellationToken)
+    // گرفتن جزئیات یک غذای خاص با شناسه Guid
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<FoodItemDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _foodService.GetFoodByIdAsync(id, cancellationToken);
         if (result is null)

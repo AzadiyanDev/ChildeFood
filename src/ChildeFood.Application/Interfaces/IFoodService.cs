@@ -6,6 +6,6 @@ namespace ChildeFood.Application.Interfaces;
 public interface IFoodService
 {
     Task<IEnumerable<FoodItemDto>> GetAllFoodsAsync(CancellationToken cancellationToken = default);
-    Task<FoodItemDto?> GetFoodByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<FoodItemDto?> GetFoodByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<FoodItemDto> CreateFoodAsync(CreateFoodItemDto dto, CancellationToken cancellationToken = default);
 }
