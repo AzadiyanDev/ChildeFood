@@ -21,6 +21,12 @@ public static class DependencyInjection
         // ثبت سرویس مدیریت مدارس برای سلکت‌باکس و ادمین
         services.AddScoped<ISchoolService, SchoolService>();
 
+        // ثبت سرویس کیف پول برای تمام محاسبات مالی و تراکنش‌ها
+        services.AddScoped<IWalletService, WalletService>();
+
+        // ثبت سرویس سفارش‌ها برای واکشی سفارش‌های امروز و پیگیری
+        services.AddScoped<IOrderService, OrderService>();
+
         return services;
     }
 }
