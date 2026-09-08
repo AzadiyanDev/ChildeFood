@@ -35,6 +35,14 @@ public class FoodsController : ControllerBase
         return Ok(result);
     }
 
+    // دریافت پیشنهاد ویژه امروز (محبوب‌ترین و پرسفارش‌ترین غذای منوی روز)
+    [HttpGet("today-recommendation")]
+    public async Task<ActionResult<FoodRecommendationDto?>> GetTodayRecommendation([FromQuery] DateOnly? date, CancellationToken cancellationToken)
+    {
+        var recommendation = await _foodService.GetTodayRecommendationAsync(date, cancellationToken);
+        return Ok(recommendation);
+    }
+
     // ثبت غذای جدید در سیستم
     [HttpPost]
     public async Task<ActionResult<FoodItemDto>> Create([FromBody] CreateFoodItemDto dto, CancellationToken cancellationToken)

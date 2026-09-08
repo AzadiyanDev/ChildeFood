@@ -8,4 +8,5 @@ public interface IFoodService
     Task<IEnumerable<FoodItemDto>> GetAllFoodsAsync(CancellationToken cancellationToken = default);
     Task<FoodItemDto?> GetFoodByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<FoodItemDto> CreateFoodAsync(CreateFoodItemDto dto, CancellationToken cancellationToken = default);
+    Task<FoodRecommendationDto?> GetTodayRecommendationAsync(DateOnly? date = null, CancellationToken cancellationToken = default);
 }
