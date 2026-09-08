@@ -20,14 +20,24 @@ interface CalendarDay {
     <div id="calendar-page-view" class="px-5 pt-4 pb-32 select-none animate-in fade-in duration-200">
       
       <!-- =========================================================================
-           ۱. بخش سربرگ مینیمال (HEADER)
-           سمت راست: فقط عنوان بولد «رزرو ناهار مدرسه» بدون زیرعنوان
-           سمت چپ: نشانگر مرحله ۲ از ۵ چسبیده به چپ بدون دکمه فیزیکی بازگشت
+           ۱. بخش سربرگ (HEADER)
+           سمت راست: دکمه فیزیکی بازگشت با فاصله مناسب از عنوان بولد «رزرو ناهار مدرسه»
+           سمت چپ: نشانگر مرحله ۲ از ۵ چسبیده به چپ
            ========================================================================= -->
       <header id="calendar-header-section" class="flex items-center justify-between gap-3 mb-4">
         
-        <!-- سمت راست در چینش RTL: فقط عنوان بولد اصلی بدون زیرعنوان -->
-        <div class="flex items-center text-right">
+        <!-- سمت راست در چینش RTL: دکمه بازگشت و عنوان اصلی -->
+        <div class="flex items-center gap-3 text-right">
+          <button
+            id="btn-calendar-back"
+            type="button"
+            (click)="foodStore.navigateBack()"
+            aria-label="بازگشت"
+            class="w-10 h-10 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-center text-gray-800 shadow-xs hover:bg-gray-50 active:scale-95 transition cursor-pointer flex-shrink-0">
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
           <h1 id="calendar-title" class="text-lg sm:text-xl font-black text-[#111111] tracking-tight leading-tight">
             رزرو ناهار مدرسه
           </h1>
@@ -50,15 +60,16 @@ interface CalendarDay {
 
       <!-- =========================================================================
            ۲. کارت پروفایل فرزند (CHILD SELECTOR CARD)
-           کارت سفید فشرده، گوشه‌های گرد ۲۰px، سایه ملایم، مشخصات فرزند و دکمه تغییر
+           منتقل‌شده از بالای صفحه اصلی به بالای تقویم با استایل یکپارچه و مدرن
+           طبق فیدبک کاربر: تگ «فرزند فعال» برداشته شد و دکمه تغییر فقط در صورت وجود بیش از ۱ فرزند نمایش داده می‌شود
            ========================================================================= -->
       <section id="child-selector-card" class="mb-4" data-purpose="child-profile-card">
-        <div class="bg-white rounded-[20px] p-3.5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex items-center justify-between gap-3">
+        <div class="bg-white rounded-[20px] p-3.5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-orange-200/80 transition-all flex items-center justify-between gap-3">
           
-          <!-- آواتار دایره‌ای + نام فرزند + پایه و مدرسه -->
-          <div class="flex items-center gap-3 min-w-0">
-            <!-- آواتار گرد فرزند -->
-            <div class="w-11 h-11 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-xl flex-shrink-0 shadow-xs overflow-hidden">
+          <!-- آواتار گوشه‌گرد + نام فرزند + پایه و مدرسه -->
+          <div class="flex items-center gap-2.5 min-w-0">
+            <!-- آواتار گوشه‌گرد ۲۴ پیکسلی فرزند -->
+            <div class="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs overflow-hidden">
               <span id="child-card-avatar" class="w-full h-full flex items-center justify-center">
                 @if (foodStore.isImageAvatar(activeChild().avatar)) {
                   <img [src]="activeChild().avatar" [alt]="activeChild().name" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
@@ -78,18 +89,20 @@ interface CalendarDay {
             </div>
           </div>
 
-          <!-- دکمه تغییر فرزند با سایز لمسی ۴۴ پیکسلی -->
-          <button
-            type="button"
-            id="btn-change-child"
-            aria-label="تغییر فرزند"
-            (click)="toggleChildPicker()"
-            class="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#FF6B3D] hover:text-[#FF6B3D] bg-gray-50/80 hover:bg-white text-xs font-bold text-[#111111] transition-all flex items-center gap-1 cursor-pointer flex-shrink-0">
-            <span>تغییر</span>
-            <svg class="w-3.5 h-3.5 transform rotate-180 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </button>
+          <!-- دکمه تغییر فرزند با ارگونومی ۴۴ پیکسلی لمسی - فقط در صورتی که بیش از ۱ فرزند وجود داشته باشد -->
+          @if (foodStore.children().length > 1) {
+            <button
+              type="button"
+              id="btn-change-child"
+              aria-label="تغییر فرزند"
+              (click)="toggleChildPicker()"
+              class="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#FF6B3D] hover:text-[#FF6B3D] bg-gray-50/80 hover:bg-white text-xs font-bold text-[#111111] transition-all flex items-center gap-1 cursor-pointer flex-shrink-0">
+              <span>تغییر</span>
+              <svg class="w-3.5 h-3.5 transform rotate-180 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          }
 
         </div>
 

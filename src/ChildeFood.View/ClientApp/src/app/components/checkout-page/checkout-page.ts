@@ -29,8 +29,18 @@ interface CheckoutOrderItem {
            ========================================================================= -->
       <header id="checkout-header" class="flex items-center justify-between gap-3 px-5 mb-4">
         
-        <!-- سمت راست در RTL: فقط عنوان اصلی بدون هیچ متن زیرعنوان -->
-        <div class="flex items-center text-right">
+        <!-- سمت راست در RTL: دکمه بازگشت و عنوان اصلی -->
+        <div class="flex items-center gap-3 text-right">
+          <button
+            id="btn-checkout-back"
+            type="button"
+            (click)="foodStore.navigateBack()"
+            aria-label="بازگشت"
+            class="w-10 h-10 rounded-2xl bg-white border border-black/[0.06] flex items-center justify-center text-gray-800 shadow-xs hover:bg-gray-50 active:scale-95 transition cursor-pointer flex-shrink-0">
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
           <h1 id="checkout-title" class="text-lg sm:text-xl font-black text-[#111111] tracking-tight leading-tight">
             بررسی و تکمیل سفارش
           </h1>

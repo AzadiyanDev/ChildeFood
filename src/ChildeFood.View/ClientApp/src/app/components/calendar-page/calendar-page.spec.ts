@@ -16,6 +16,7 @@ describe('CalendarPage Component — تست‌های ریدیزاین صفحه �
     fixture = TestBed.createComponent(CalendarPage);
     component = fixture.componentInstance;
     foodStore = TestBed.inject(FoodStore);
+    foodStore.isAuthenticated.set(true);
     fixture.detectChanges();
   });
 
@@ -30,8 +31,8 @@ describe('CalendarPage Component — تست‌های ریدیزاین صفحه �
   });
 
   // تست هدر مینیمال
-  describe('۱. سربرگ مینیمال (HEADER)', () => {
-    it('باید فقط شامل عنوان بزرگ "رزرو ناهار مدرسه" بدون زیرعنوان و دکمه بازگشت فیزیکی باشد', () => {
+  describe('۱. سربرگ (HEADER)', () => {
+    it('باید فقط شامل عنوان بزرگ "رزرو ناهار مدرسه" بدون زیرعنوان باشد', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const titleEl = compiled.querySelector('#calendar-title');
       expect(titleEl).toBeTruthy();
@@ -41,16 +42,17 @@ describe('CalendarPage Component — تست‌های ریدیزاین صفحه �
       expect(subtitleEl).toBeNull();
     });
 
-    it('دکمه بازگشت فیزیکی حذف شده و شمارنده مرحله ۲ از ۵ در سمت چپ قرار دارد و ناوبری بازگشت به خانه کار می‌کند', () => {
+    it('دکمه بازگشت در سمت راست قرار دارد و کلیک روی آن کاربر را به خانه هدایت می‌کند', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const backBtn = compiled.querySelector<HTMLButtonElement>('#btn-calendar-back');
-      expect(backBtn).toBeNull();
+      expect(backBtn).toBeTruthy();
 
       const progress = compiled.querySelector('#calendar-progress-indicator');
       expect(progress?.textContent).toContain('مرحله ۲ از ۵');
 
       foodStore.activePage.set('calendar');
-      foodStore.navigateBack();
+      backBtn?.click();
+      fixture.detectChanges();
       expect(foodStore.activePage()).toBe('home');
     });
 
@@ -106,6 +108,29 @@ describe('CalendarPage Component — تست‌های ریدیزاین صفحه �
 
       expect(foodStore.selectedChildId()).toBe(secondChild.id);
       expect(component.showChildPicker()).toBe(false);
+    });
+
+    it('طبق درخواست کاربر، تگ «فرزند فعال» نباید داخل کارت وجود داشته باشد', () => {
+      const compiled = fixture.nativeElement as HTMLElement;
+      const card = compiled.querySelector('#child-selector-card');
+      expect(card?.textContent).not.toContain('فرزند فعال');
+    });
+
+    it('اگر فقط یک فرزند وجود داشته باشد، دکمه تغییر نباید رندر شود', () => {
+      const singleChild = foodStore.children().slice(0, 1);
+      foodStore.children.set(singleChild);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const changeBtn = compiled.querySelector('#btn-change-child');
+      expect(changeBtn).toBeNull();
+    });
+
+    it('اگر بیش از یک فرزند وجود داشته باشد، دکمه تغییر رندر می‌شود', () => {
+      expect(foodStore.children().length).toBeGreaterThan(1);
+      const compiled = fixture.nativeElement as HTMLElement;
+      const changeBtn = compiled.querySelector('#btn-change-child');
+      expect(changeBtn).toBeTruthy();
     });
   });
 

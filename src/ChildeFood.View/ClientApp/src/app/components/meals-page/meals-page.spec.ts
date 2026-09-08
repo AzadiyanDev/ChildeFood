@@ -18,6 +18,7 @@ describe('MealsPage Component Suite — فلو دقیق مرحله‌به‌مر
     fixture = TestBed.createComponent(MealsPage);
     component = fixture.componentInstance;
     foodStore = TestBed.inject(FoodStore);
+    foodStore.isAuthenticated.set(true);
     foodStore.activePage.set('meals');
 
     // روزهای انتخابی از مرحله تقویم: ۱۵، ۱۶ و ۱۷ شهریور
@@ -48,6 +49,20 @@ describe('MealsPage Component Suite — فلو دقیق مرحله‌به‌مر
 
       const selectedDateText = compiled.querySelector('#selected-date-text');
       expect(selectedDateText?.textContent).toContain('۱۵ شهریور');
+
+      const backBtn = compiled.querySelector<HTMLButtonElement>('#btn-meals-back');
+      expect(backBtn).toBeTruthy();
+    });
+
+    it('کلیک روی دکمه بازگشت در صفحه غذا کاربر را به صفحه تقویم هدایت می‌کند', () => {
+      const compiled = fixture.nativeElement as HTMLElement;
+      const backBtn = compiled.querySelector<HTMLButtonElement>('#btn-meals-back');
+      expect(backBtn).toBeTruthy();
+
+      foodStore.activePage.set('meals');
+      backBtn?.click();
+      fixture.detectChanges();
+      expect(foodStore.activePage()).toBe('calendar');
     });
 
     it('در ابتدای ورود، هیچ روزی نباید نارنجی و تیک‌دار باشد', () => {

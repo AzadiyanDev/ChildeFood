@@ -16,6 +16,7 @@ describe('BottomNav Component — تست نوار ناوبری جزیره‌ای
     fixture = TestBed.createComponent(BottomNav);
     component = fixture.componentInstance;
     foodStore = TestBed.inject(FoodStore);
+    foodStore.isAuthenticated.set(true);
     fixture.detectChanges();
   });
 

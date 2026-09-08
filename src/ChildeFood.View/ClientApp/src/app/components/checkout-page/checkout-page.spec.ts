@@ -16,6 +16,7 @@ describe('CheckoutPage Component — صفحه اختصاصی و تمام‌صف�
     fixture = TestBed.createComponent(CheckoutPage);
     component = fixture.componentInstance;
     foodStore = TestBed.inject(FoodStore);
+    foodStore.isAuthenticated.set(true);
     foodStore.activePage.set('checkout');
     fixture.detectChanges();
   });
@@ -33,6 +34,16 @@ describe('CheckoutPage Component — صفحه اختصاصی و تمام‌صف�
     expect(title?.textContent).toContain('بررسی و تکمیل سفارش');
     expect(subtitle).toBeNull();
     expect(progress?.textContent).toContain('مرحله ۴ از ۵');
+  });
+
+  it('دکمه بازگشت در سمت راست هدر رندر شده و با کلیک کاربر را به صفحه انتخاب غذا هدایت می‌کند', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const backBtn = compiled.querySelector<HTMLButtonElement>('#btn-checkout-back');
+    expect(backBtn).toBeTruthy();
+
+    backBtn?.click();
+    fixture.detectChanges();
+    expect(foodStore.activePage()).toBe('meals');
   });
 
   it('باید مشخصات دانش‌آموز (آوا احمدی) و مدرسه و روزهای انتخابی در کارت نمایش داده شوند', () => {
@@ -86,16 +97,6 @@ describe('CheckoutPage Component — صفحه اختصاصی و تمام‌صف�
     component.selectPaymentMethod('wallet');
     fixture.detectChanges();
     expect(component.selectedPaymentMethod()).toBe('wallet');
-  });
-
-  it('دکمه بازگشت فیزیکی از هدر حذف شده و ناوبری بازگشت گوشی کاربر را به مرحله قبل (meals) هدایت می‌کند', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const backBtn = compiled.querySelector<HTMLButtonElement>('#btn-checkout-back');
-    expect(backBtn).toBeNull();
-
-    foodStore.activePage.set('checkout');
-    foodStore.navigateBack();
-    expect(foodStore.activePage()).toBe('meals');
   });
 
   it('نوار اکشن جزیره‌ای پایین شامل المان مشکی قیمت نهایی و دکمه نارنجی «تکمیل سفارش» نمایش داده شود', () => {
