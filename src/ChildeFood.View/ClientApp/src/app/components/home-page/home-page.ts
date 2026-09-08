@@ -61,23 +61,14 @@ export interface HomeOrderDisplay {
 
         </div>
 
-        <!-- متن سلام خودمانی و تیتر صمیمانه همراه آواتار کوچک فرزند -->
+        <!-- متن سلام خودمانی و تیتر صمیمانه -->
         <div class="text-right">
           <span id="header-greeting-text" class="text-xs font-normal text-[#8F8F8F] block">
             سلام، {{ greetingName() }} 👋
           </span>
-          <div class="flex items-center gap-2 mt-1">
-            <span id="header-child-avatar" class="w-7 h-7 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center text-sm shadow-xs flex-shrink-0 overflow-hidden">
-              @if (foodStore.isImageAvatar(activeChild().avatar)) {
-                <img [src]="activeChild().avatar" [alt]="activeChild().name" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
-              } @else {
-                {{ activeChild().avatar }}
-              }
-            </span>
-            <h1 id="header-headline" class="text-lg sm:text-xl font-bold text-[#111111] tracking-tight leading-snug">
-              {{ activeChildShortName() }} امروز چی دوست داره؟ 🍱
-            </h1>
-          </div>
+          <h1 id="header-headline" class="text-lg sm:text-xl font-bold text-[#111111] tracking-tight leading-snug mt-1">
+            {{ activeChildShortName() }} امروز چی دوست داره؟
+          </h1>
         </div>
 
         <!-- پیام پاپ‌آپ کوچک اعلان‌ها برای فیدبک لمس زنگوله -->
@@ -99,52 +90,6 @@ export interface HomeOrderDisplay {
         }
       </header>
 
-      <!-- =========================================================================
-           ۲. بخش فرزند انتخاب شده (ACTIVE CHILD CARD)
-           طبق فیدبک ۴: جایگاه قبل از کارت کیف پول، نمایش آواتار، نام، کلاس و دکمه تغییر
-           ========================================================================= -->
-      <section id="active-child-section" class="mb-3.5" data-purpose="active-child-selector">
-        <div class="bg-white rounded-[20px] p-3.5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-orange-200/80 transition-all flex items-center justify-between gap-3">
-          
-          <!-- سمت راست: آواتار گرد فرزند و مشخصات کلاس و مدرسه -->
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs overflow-hidden">
-              <span id="active-child-avatar" class="w-full h-full flex items-center justify-center">
-                @if (foodStore.isImageAvatar(activeChild().avatar)) {
-                  <img [src]="activeChild().avatar" [alt]="activeChild().name" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
-                } @else {
-                  {{ activeChild().avatar }}
-                }
-              </span>
-            </div>
-
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
-                <span class="text-[9px] font-bold text-[#FF6B3D] bg-orange-50 border border-orange-200/60 px-1.5 py-0.5 rounded-md">فرزند فعال</span>
-                <h3 id="active-child-name" class="text-sm font-bold text-[#111111] truncate">
-                  {{ activeChild().name }}
-                </h3>
-              </div>
-              <p id="active-child-school" class="text-[11px] text-[#8F8F8F] font-normal truncate mt-0.5">
-                {{ activeChild().grade }} - {{ activeChild().school }}
-              </p>
-            </div>
-          </div>
-
-          <!-- سمت چپ: دکمه تغییر فرزند با ارگونومی ۴۴ پیکسلی لمسی -->
-          <button
-            type="button"
-            id="btn-change-active-child"
-            (click)="handleChangeChild()"
-            class="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#FF6B3D] hover:text-[#FF6B3D] bg-gray-50/80 hover:bg-white text-xs font-bold text-[#111111] transition-all flex items-center gap-1 cursor-pointer flex-shrink-0">
-            <span>تغییر</span>
-            <svg class="w-3.5 h-3.5 transform rotate-180 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </button>
-
-        </div>
-      </section>
 
       <!-- =========================================================================
            ۳. کارت مشکی لوکس موجودی کیف پول (WALLET BALANCE CARD)

@@ -16,6 +16,7 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     fixture = TestBed.createComponent(HomePage);
     component = fixture.componentInstance;
     foodStore = TestBed.inject(FoodStore);
+    foodStore.isAuthenticated.set(true);
     fixture.detectChanges();
   });
 
@@ -37,11 +38,11 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(headlineEl).toBeTruthy();
     expect(headlineEl?.textContent).toContain('علی');
     expect(headlineEl?.textContent).toContain('امروز چی دوست داره؟');
-    expect(headlineEl?.textContent).toContain('🍱');
+    expect(headlineEl?.textContent).not.toContain('🍱');
 
-    // آواتار کوچک فرزند کنار تیتر
+    // آواتار کوچک فرزند طبق درخواست کاربر حذف شده است
     const childAvatarEl = compiled.querySelector('#header-child-avatar');
-    expect(childAvatarEl).toBeTruthy();
+    expect(childAvatarEl).toBeNull();
   });
 
   it('سربرگ بالایی باید شامل دکمه آواتار گرد و زنگوله اعلان‌ها باشد', () => {
@@ -60,38 +61,11 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(compiled.querySelector('#notification-toast')).toBeTruthy();
   });
 
-  // فیدبک ۴: کارت فرزند انتخاب شده قبل از کارت کیف پول
-  it('فیدبک ۴: باید کارت فرزند انتخاب شده با مشخصات علی احمدی و دکمه تغییر رندر شود', () => {
+  // انتقال بخش کارت فرزند: کارت فرزند طبق نیازمندی از بالای صفحه اصلی برداشته شده و به بالای صفحه تقویم منتقل شده است
+  it('کارت مشخصات فرزند نباید در بالای صفحه اصلی باشد و به تقویم منتقل شده است', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const childSection = compiled.querySelector('#active-child-section');
-    expect(childSection).toBeTruthy();
-
-    // مشخصات فرزند
-    const childNameEl = compiled.querySelector('#active-child-name');
-    expect(childNameEl?.textContent).toContain('علی احمدی');
-
-    const childSchoolEl = compiled.querySelector('#active-child-school');
-    expect(childSchoolEl?.textContent).toContain('کلاس پنجم');
-    expect(childSchoolEl?.textContent).toContain('مدرسه نمونه');
-
-    const childAvatarEl = compiled.querySelector('#active-child-avatar');
-    expect(childAvatarEl).toBeTruthy();
-    const avatarImg = childAvatarEl?.querySelector('img');
-    if (avatarImg) {
-      expect(avatarImg.getAttribute('src')).toContain('ali.svg');
-    } else {
-      expect(childAvatarEl?.textContent).toContain('👦');
-    }
-
-    // دکمه تغییر فرزند
-    const changeBtn = compiled.querySelector<HTMLButtonElement>('#btn-change-active-child');
-    expect(changeBtn).toBeTruthy();
-    expect(changeBtn?.textContent).toContain('تغییر');
-
-    // کلیک روی دکمه تغییر باید مدال انتخاب فرزند را باز کند
-    changeBtn?.click();
-    fixture.detectChanges();
-    expect(foodStore.isChildModalOpen()).toBe(true);
+    expect(childSection).toBeNull();
   });
 
   it('کارت کیف پول باید مشخصات کارت پریمیوم بانکی تیره با گوشه‌های ۲۴ پیکسل و سایه ملایم را داشته باشد', () => {
@@ -279,10 +253,6 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     const walletCard = compiled.querySelector('#wallet-balance-card > div');
     expect(walletCard?.getAttribute('class')).toContain('bg-[#111111]');
 
-    // کارت فرزند فعال باید سفید باشد
-    const activeChildCard = compiled.querySelector('#active-child-section > div');
-    expect(activeChildCard?.getAttribute('class')).toContain('bg-white');
-
     // کارت‌های سفارش باید سفید باشند
     const orderCards = compiled.querySelectorAll('[id^="order-card-"]');
     orderCards.forEach((c) => {
@@ -360,21 +330,19 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(balance?.getAttribute('class')).toContain('font-semibold');
   });
 
-  // ترتیب بخش‌ها طبق چیدمان نهایی پیشنهادی پرامپت
-  it('ترتیب قرارگیری بخش‌ها باید دقیقاً طبق چیدمان نهایی پیشنهادی باشد', () => {
+  // ترتیب بخش‌ها طبق چیدمان پیشنهادی صفحه اصلی
+  it('ترتیب قرارگیری بخش‌ها باید دقیقاً طبق چیدمان پیشنهادی باشد', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const sections = Array.from(compiled.querySelectorAll('#home-page-view > *'));
     const sectionIds = sections.map((s) => s.id);
 
     const headerIndex = sectionIds.indexOf('top-header-section');
-    const activeChildIndex = sectionIds.indexOf('active-child-section');
     const walletIndex = sectionIds.indexOf('wallet-balance-card');
     const ordersIndex = sectionIds.indexOf('today-orders-section');
     const recommendationIndex = sectionIds.indexOf('daily-recommendation-section');
     const quickActionsIndex = sectionIds.indexOf('quick-actions-section');
 
-    expect(headerIndex).toBeLessThan(activeChildIndex);
-    expect(activeChildIndex).toBeLessThan(walletIndex);
+    expect(headerIndex).toBeLessThan(walletIndex);
     expect(walletIndex).toBeLessThan(ordersIndex);
     expect(ordersIndex).toBeLessThan(recommendationIndex);
     expect(recommendationIndex).toBeLessThan(quickActionsIndex);
@@ -407,9 +375,6 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(component.activeChild()).toBeTruthy();
     expect(component.activeChild().name).toBe('علی احمدی');
     expect(component.activeChildShortName()).toBe('علی');
-
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('#active-child-name')?.textContent).toContain('علی احمدی');
   });
 
   // تست لبه ۳: داینامیک بودن مینی‌کارت شارژ والت
@@ -439,11 +404,9 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
   // تست ارگونومی لمسی موبایل
   it('تمام کلیدهای تعاملی مهم صفحه اصلی باید حداقل ارتفاع ۴۴ پیکسل برای لمس استاندارد موبایل داشته باشند', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const changeChildBtn = compiled.querySelector('#btn-change-active-child');
     const rechargeBtn = compiled.querySelector('#btn-recharge-wallet');
     const viewMenuBtn = compiled.querySelector('#btn-view-recommended-menu');
 
-    expect(changeChildBtn?.getAttribute('class')).toContain('min-h-[44px]');
     expect(rechargeBtn?.getAttribute('class')).toContain('min-h-[44px]');
     expect(viewMenuBtn?.getAttribute('class')).toContain('min-h-[44px]');
   });
