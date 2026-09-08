@@ -488,3 +488,6 @@ $RECYCLE.BIN/
 
 # VS Code C# Dev Tools - Auto-generated runners
 .vscodecsdt/Runners/
+
+# User Uploads
+**/uploads/
