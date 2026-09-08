@@ -1,7 +1,17 @@
-import {ChangeDetectionStrategy, Component, computed, inject, signal, effect, OnDestroy} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  effect,
+  OnInit,
+  OnDestroy,
+  HostListener,
+} from '@angular/core';
 import {DOCUMENT} from '@angular/common';
 import {FoodStore} from '../../services/food-store';
-import {SchoolOrder} from '../../models/food.model';
+import {SchoolOrder, OrderSummaryItem} from '../../models/food.model';
 
 @Component({
   selector: 'app-orders-page',
@@ -9,7 +19,7 @@ import {SchoolOrder} from '../../models/food.model';
   template: `
     <div id="orders-page-view" class="px-5 pt-3 pb-8 animate-in fade-in duration-200" data-purpose="orders-page">
       
-      <!-- Top Bar with Back Button & Page Title (Matching Wallet & Children pages) -->
+      <!-- نوار بالای صفحه با دکمه بازگشت، عنوان و تعداد کل سفارش‌ها -->
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
           <button
@@ -33,17 +43,17 @@ import {SchoolOrder} from '../../models/food.model';
         </div>
 
         <span class="px-3 py-1 rounded-full bg-[#141517] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">
-          <span>{{ foodStore.schoolOrders().length }} سفارش</span>
+          <span>{{ totalCount().toLocaleString('fa-IR') }} سفارش</span>
         </span>
       </div>
 
-      <!-- Top Filter Tabs (Full width segmented control with black active pill) -->
+      <!-- تب‌های فیلتر بالای صفحه (سگمنت کنترل با پس‌زمینه کپسولی مشکی) -->
       <div class="bg-white rounded-[24px] p-1.5 sm:p-2 border border-black/[0.05] shadow-[0_4px_16px_-4px_rgba(0,0,0,0.03)] mb-5">
         <div class="w-full bg-gray-100/90 p-1 rounded-full border border-black/[0.04] grid grid-cols-3 gap-1">
           <button
             id="filter-order-all"
             type="button"
-            (click)="activeFilter.set('all')"
+            (click)="setFilter('all')"
             [class]="
               activeFilter() === 'all'
                 ? 'py-2 sm:py-2.5 rounded-full bg-[#141517] text-white font-black text-xs sm:text-[13px] shadow-sm transition-all cursor-pointer text-center'
@@ -54,18 +64,18 @@ import {SchoolOrder} from '../../models/food.model';
           <button
             id="filter-order-active"
             type="button"
-            (click)="activeFilter.set('active')"
+            (click)="setFilter('active')"
             [class]="
               activeFilter() === 'active'
                 ? 'py-2 sm:py-2.5 rounded-full bg-[#141517] text-white font-black text-xs sm:text-[13px] shadow-sm transition-all cursor-pointer text-center'
                 : 'py-2 sm:py-2.5 rounded-full text-gray-500 hover:text-gray-900 font-bold text-xs sm:text-[13px] transition-all cursor-pointer text-center'
             ">
-            سفارش‌های فعال ({{ activeCount() }})
+            سفارش‌های فعال ({{ activeCount().toLocaleString('fa-IR') }})
           </button>
           <button
             id="filter-order-delivered"
             type="button"
-            (click)="activeFilter.set('delivered')"
+            (click)="setFilter('delivered')"
             [class]="
               activeFilter() === 'delivered'
                 ? 'py-2 sm:py-2.5 rounded-full bg-[#141517] text-white font-black text-xs sm:text-[13px] shadow-sm transition-all cursor-pointer text-center'
@@ -76,14 +86,23 @@ import {SchoolOrder} from '../../models/food.model';
         </div>
       </div>
 
-      <!-- Orders List -->
+      <!-- لیست کارت‌های سفارش با لودینگ، اسکلتون و اسکرول نامحدود -->
       <div class="space-y-3">
-        @for (order of filteredOrders(); track order.id) {
+        <!-- اسکلتون لودینگ اولیه تا موقعی که داده‌ها از دیتابیس بیان -->
+        @if (foodStore.isOrdersLoading() && displayOrders().length === 0) {
+          <div class="space-y-3 animate-pulse">
+            <div class="bg-white rounded-[22px] p-4 border border-black/[0.06] h-36"></div>
+            <div class="bg-white rounded-[22px] p-4 border border-black/[0.06] h-36"></div>
+            <div class="bg-white rounded-[22px] p-4 border border-black/[0.06] h-36"></div>
+          </div>
+        }
+
+        @for (order of displayOrders(); track order.id) {
           <div
             [id]="'order-card-' + order.id"
             class="bg-white rounded-[22px] p-4 border border-black/[0.06] shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
             
-            <!-- Card Header: Child Avatar, Name, School & Status Pill -->
+            <!-- سربرگ کارت: تصویر آواتار فرزند، نام، مدرسه و نشان وضعیت -->
             <div class="flex items-center justify-between gap-2.5">
               <div class="flex items-center gap-2.5 min-w-0">
                 <div class="w-11 h-11 rounded-xl bg-orange-50/70 border border-orange-100 flex items-center justify-center shadow-xs flex-shrink-0 overflow-hidden">
@@ -99,16 +118,16 @@ import {SchoolOrder} from '../../models/food.model';
                       {{ order.childName }}
                     </h3>
                     <span class="text-[10px] text-gray-400 font-mono font-medium">
-                      ({{ order.id }})
+                      ({{ getOrderCode(order) }})
                     </span>
                   </div>
                   <p class="text-[10px] text-gray-500 font-medium truncate mt-0.5">
-                    {{ order.school }} @if (order.grade) { • {{ order.grade }} }
+                    {{ getSchoolName(order) }} @if (order.grade) { • {{ order.grade }} }
                   </p>
                 </div>
               </div>
 
-              <!-- Live Status Pill -->
+              <!-- نشان زنده وضعیت سفارش -->
               <span
                 [class]="
                   order.status === 'active'
@@ -125,7 +144,7 @@ import {SchoolOrder} from '../../models/food.model';
               </span>
             </div>
 
-            <!-- Middle Row: Food Item Summary & Price -->
+            <!-- بخش میانی: اطلاعات ناهار و قیمت -->
             <div class="mt-3 bg-[#fbfbfb] rounded-xl px-3 py-2.5 border border-black/[0.03] flex items-center justify-between gap-2">
               <div class="flex items-center gap-2.5 min-w-0">
                 <span class="text-2xl flex-shrink-0">{{ order.foodEmoji }}</span>
@@ -134,7 +153,7 @@ import {SchoolOrder} from '../../models/food.model';
                     {{ order.foodTitle }}
                   </h4>
                   <div class="flex items-center gap-1.5 text-[10px] text-gray-400 mt-0.5">
-                    <span>{{ order.date }}</span>
+                    <span>{{ getOrderDate(order) }}</span>
                     @if (order.deliveryTime) {
                       <span>•</span>
                       <span class="text-gray-600 font-semibold">{{ order.deliveryTime }}</span>
@@ -143,7 +162,7 @@ import {SchoolOrder} from '../../models/food.model';
                 </div>
               </div>
 
-              <!-- Price -->
+              <!-- قیمت به تومان و اعداد فارسی -->
               <div class="text-left flex-shrink-0">
                 <span class="text-xs sm:text-sm font-black text-gray-900">
                   {{ order.price.toLocaleString('fa-IR') }}
@@ -152,7 +171,7 @@ import {SchoolOrder} from '../../models/food.model';
               </div>
             </div>
 
-            <!-- Card Footer: Tracking code & Detail Button -->
+            <!-- پاورقی کارت: کد رهگیری و دکمه جزئیات بیشتر -->
             <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
               <span class="text-[10px] text-gray-400 font-mono">
                 کد رهگیری: {{ order.trackingCode }}
@@ -161,7 +180,7 @@ import {SchoolOrder} from '../../models/food.model';
               <button
                 type="button"
                 [id]="'btn-order-details-' + order.id"
-                (click)="selectedTrackingOrder.set(order)"
+                (click)="openOrderDetails(order)"
                 class="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 active:scale-95 text-gray-800 text-xs font-bold rounded-xl border border-black/[0.05] transition cursor-pointer flex items-center gap-1.5">
                 <span>جزئیات بیشتر</span>
                 <svg class="w-3.5 h-3.5 text-gray-500 transform rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -173,8 +192,23 @@ import {SchoolOrder} from '../../models/food.model';
           </div>
         }
 
-        <!-- Empty State -->
-        @if (filteredOrders().length === 0) {
+        <!-- لودینگ چرخان اسکرول بی‌نهایت وقتی به پایین صفحه می‌رسیم -->
+        @if (foodStore.isOrdersLoadingMore()) {
+          <div class="flex items-center justify-center gap-2 py-4 text-xs font-bold text-gray-500">
+            <span class="w-4 h-4 border-2 border-[#f97352] border-t-transparent rounded-full animate-spin"></span>
+            <span>در حال دریافت سفارش‌های بعدی...</span>
+          </div>
+        }
+
+        <!-- پیام رسیدن به پایان لیست سفارش‌ها -->
+        @if (!foodStore.ordersHasMore() && displayOrders().length >= 10) {
+          <div class="text-center py-4 text-[11px] font-medium text-gray-400">
+            ✓ تمامی سفارش‌های شما بارگذاری شدند
+          </div>
+        }
+
+        <!-- حالت خالی در صورتی که هیچ سفارشی یافت نشود -->
+        @if (!foodStore.isOrdersLoading() && displayOrders().length === 0) {
           <div class="bg-white rounded-[26px] p-8 border border-black/[0.05] text-center shadow-xs my-6">
             <div class="w-16 h-16 rounded-full bg-gray-50 border border-gray-200/60 flex items-center justify-center text-3xl mx-auto mb-3">
               📋
@@ -185,7 +219,7 @@ import {SchoolOrder} from '../../models/food.model';
             </p>
             <button
               type="button"
-              (click)="resetFilters()"
+              (click)="setFilter('all')"
               class="px-4 py-2 bg-[#f97352] text-white text-xs font-black rounded-xl shadow-xs active:scale-95 transition cursor-pointer">
               نمایش همه سفارش‌ها
             </button>
@@ -193,39 +227,41 @@ import {SchoolOrder} from '../../models/food.model';
         }
       </div>
 
-      <!-- Order Details & Live Tracking Modal -->
+      <!-- مودال اختصاصی جزئیات و پیگیری دقیق سفارش (Lazy Loading) -->
       @if (selectedTrackingOrder(); as trackingOrder) {
         <div
           class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 overscroll-contain"
           (touchmove)="$event.stopPropagation()">
-          <!-- Backdrop -->
+          <!-- بک‌دراپ تاریک با قابلیت بستن با کلیک -->
           <button
             type="button"
             class="fixed inset-0 w-full h-full bg-black/60 backdrop-blur-xs cursor-pointer border-none touch-none"
             aria-label="بستن پنجره جزئیات"
             (touchmove)="$event.preventDefault()"
             (wheel)="$event.preventDefault()"
-            (click)="selectedTrackingOrder.set(null)">
+            (click)="closeOrderDetails()">
           </button>
 
-          <!-- Modal Sheet Content -->
+          <!-- برگه محتوای مودال -->
           <div
             class="relative bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 shadow-2xl border border-gray-100 z-10 max-h-[90vh] overflow-y-auto overscroll-contain no-scrollbar"
             (touchmove)="$event.stopPropagation()">
             
-            <!-- Mobile Drag Indicator -->
+            <!-- نشانگر لمسی کشیدن برای موبایل -->
             <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-3 sm:hidden"></div>
 
-            <!-- Modal Header -->
+            <!-- سربرگ مودال -->
             <div class="flex items-center justify-between pb-3.5 border-b border-gray-100">
               <div>
                 <h3 class="text-sm sm:text-base font-black text-gray-900">جزئیات و پیگیری سفارش</h3>
-                <p class="text-[11px] text-gray-400 font-mono mt-0.5">کد سفارش: {{ trackingOrder.id }}</p>
+                <p class="text-[11px] text-gray-400 font-mono mt-0.5">
+                  کد سفارش: {{ foodStore.selectedOrderDetail()?.orderCode || trackingOrder.id }}
+                </p>
               </div>
 
               <button
                 type="button"
-                (click)="selectedTrackingOrder.set(null)"
+                (click)="closeOrderDetails()"
                 aria-label="بستن"
                 class="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -234,7 +270,7 @@ import {SchoolOrder} from '../../models/food.model';
               </button>
             </div>
 
-            <!-- Child Info Banner -->
+            <!-- کارت معرفی فرزند و مدرسه -->
             <div class="mt-4 p-3.5 bg-orange-50/50 rounded-2xl border border-orange-100 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-white border border-orange-200/80 flex items-center justify-center shadow-xs overflow-hidden flex-shrink-0">
@@ -252,127 +288,233 @@ import {SchoolOrder} from '../../models/food.model';
 
               <span
                 [class]="
-                  trackingOrder.status === 'active'
+                  (foodStore.selectedOrderDetail()?.status || trackingOrder.status) === 'active'
                     ? 'px-2.5 py-1 rounded-full bg-amber-100/80 text-amber-800 text-[10px] font-black'
                     : 'px-2.5 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-[10px] font-black'
                 ">
-                {{ trackingOrder.status === 'active' ? 'در حال آماده‌سازی' : 'تحویل شده' }}
+                {{ foodStore.selectedOrderDetail()?.statusText || (trackingOrder.status === 'active' ? 'در حال آماده‌سازی' : 'تحویل شده') }}
               </span>
             </div>
 
-            <!-- Food Item Details -->
-            <div class="mt-4 p-3.5 bg-[#fbfbfb] rounded-2xl border border-black/[0.04]">
-              <div class="flex items-start gap-3">
-                <div class="w-12 h-12 rounded-xl bg-white border border-black/[0.05] flex items-center justify-center text-2xl shadow-xs flex-shrink-0">
-                  {{ trackingOrder.foodEmoji }}
+            <!-- هشدار یادداشت رژیمی فرزند در صورت وجود -->
+            @if (foodStore.selectedOrderDetail()?.dietaryNotes) {
+              <div class="mt-3 px-3.5 py-2.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-center gap-2 text-[11px] text-amber-900">
+                <span class="text-sm">⚠️</span>
+                <div>
+                  <span class="font-bold">یادداشت سلامت/رژیمی: </span>
+                  <span>{{ foodStore.selectedOrderDetail()?.dietaryNotes }}</span>
                 </div>
-                <div class="min-w-0 flex-1">
-                  <h4 class="text-xs sm:text-sm font-black text-gray-900">{{ trackingOrder.foodTitle }}</h4>
-                  @if (trackingOrder.foodSubtitle) {
-                    <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">{{ trackingOrder.foodSubtitle }}</p>
+              </div>
+            }
+
+            <!-- اسکلتون لودینگ هنگام واکشی دیتای عمیق از سرور -->
+            @if (foodStore.isOrderDetailLoading()) {
+              <div class="mt-4 space-y-3 animate-pulse">
+                <div class="h-20 bg-gray-100 rounded-2xl"></div>
+                <div class="h-32 bg-gray-100 rounded-2xl"></div>
+              </div>
+            } @else {
+              <!-- ریز اقلام سفارش دریافت شده از دیتابیس -->
+              @if (foodStore.selectedOrderDetail()?.items && (foodStore.selectedOrderDetail()?.items?.length ?? 0) > 0) {
+                <div class="mt-4 space-y-2">
+                  <div class="text-xs font-black text-gray-800 px-1">اقلام ثبت‌شده در سفارش:</div>
+                  @for (item of foodStore.selectedOrderDetail()?.items; track item.id) {
+                    <div class="p-3 bg-[#fbfbfb] rounded-2xl border border-black/[0.04] flex items-center justify-between gap-3">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="text-2xl flex-shrink-0">{{ item.emoji }}</span>
+                        <div class="min-w-0">
+                          <h4 class="text-xs font-bold text-gray-900 truncate">{{ item.foodTitle }}</h4>
+                          <p class="text-[10px] text-gray-500 mt-0.5">
+                            {{ item.portion }} • {{ item.quantity }} عدد
+                            @if (item.calories) {
+                              • 🔥 {{ item.calories }} کیلوکالری
+                            }
+                          </p>
+                          @if (item.ingredients) {
+                            <p class="text-[9px] text-gray-400 truncate mt-0.5">{{ item.ingredients }}</p>
+                          }
+                        </div>
+                      </div>
+                      <div class="text-left flex-shrink-0">
+                        <span class="text-xs font-black text-gray-900">{{ item.totalPrice.toLocaleString('fa-IR') }}</span>
+                        <span class="text-[9px] text-gray-400 mr-0.5">تومان</span>
+                      </div>
+                    </div>
                   }
-                  <div class="flex items-center gap-2 text-[11px] text-gray-400 mt-2">
-                    <span>{{ trackingOrder.date }}</span>
-                    <span>•</span>
-                    <span class="text-gray-700 font-bold">{{ trackingOrder.deliveryTime }} تحویل در بوفه</span>
+                </div>
+              } @else {
+                <!-- فال‌بک غذای پیش‌فرض در صورت نبود ریز اقلام -->
+                <div class="mt-4 p-3.5 bg-[#fbfbfb] rounded-2xl border border-black/[0.04]">
+                  <div class="flex items-start gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-white border border-black/[0.05] flex items-center justify-center text-2xl shadow-xs flex-shrink-0">
+                      {{ trackingOrder.foodEmoji }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <h4 class="text-xs sm:text-sm font-black text-gray-900">{{ trackingOrder.foodTitle }}</h4>
+                      @if (trackingOrder.foodSubtitle) {
+                        <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">{{ trackingOrder.foodSubtitle }}</p>
+                      }
+                      <div class="flex items-center gap-2 text-[11px] text-gray-400 mt-2">
+                        <span>{{ trackingOrder.date }}</span>
+                        <span>•</span>
+                        <span class="text-gray-700 font-bold">{{ trackingOrder.deliveryTime }} تحویل در بوفه</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              }
 
-            <!-- Stages / Stepper Timeline -->
-            <div class="mt-4 p-4 rounded-2xl bg-gray-50 border border-black/[0.04]">
-              <div class="flex items-center justify-between text-xs font-black text-gray-800 mb-3">
-                <span>مراحل آماده‌سازی و توزیع</span>
-                @if (trackingOrder.status === 'active') {
-                  <span class="text-[#f97352] text-[11px] font-bold">مرحله ۳ از ۴ (در حال ارسال)</span>
-                } @else {
-                  <span class="text-emerald-600 text-[11px] font-bold">تکمیل شده ✓</span>
+              <!-- استپر مراحل آماده‌سازی و توزیع بر اساس دیتای سرور -->
+              <div class="mt-4 p-4 rounded-2xl bg-gray-50 border border-black/[0.04]">
+                <div class="flex items-center justify-between text-xs font-black text-gray-800 mb-3">
+                  <span>مراحل آماده‌سازی و توزیع</span>
+                  @if ((foodStore.selectedOrderDetail()?.status || trackingOrder.status) === 'active') {
+                    <span class="text-[#f97352] text-[11px] font-bold">مرحله ۳ از ۴ (در حال ارسال)</span>
+                  } @else {
+                    <span class="text-emerald-600 text-[11px] font-bold">تکمیل شده ✓</span>
+                  }
+                </div>
+
+                <!-- لیست مراحل تایم‌لاین -->
+                <div class="space-y-3 px-1">
+                  @if (foodStore.selectedOrderDetail()?.timelineSteps; as steps) {
+                    @for (step of steps; track step.title) {
+                      <div class="flex items-start gap-3">
+                        <div
+                          [class]="
+                            step.isCompleted
+                              ? 'w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0'
+                              : step.isCurrent
+                              ? 'w-6 h-6 rounded-full bg-[#f97352] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 animate-pulse'
+                              : 'w-6 h-6 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0'
+                          ">
+                          {{ step.isCompleted ? '✓' : step.icon }}
+                        </div>
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between">
+                            <h5
+                              [class]="
+                                step.isCurrent
+                                  ? 'text-xs font-black text-[#f97352]'
+                                  : step.isCompleted
+                                  ? 'text-xs font-bold text-gray-800'
+                                  : 'text-xs font-bold text-gray-400'
+                              ">
+                              {{ step.title }}
+                            </h5>
+                            <span class="text-[10px] text-gray-400">{{ step.time }}</span>
+                          </div>
+                          <p class="text-[10px] text-gray-500 mt-0.5">{{ step.subtitle }}</p>
+                        </div>
+                      </div>
+                    }
+                  } @else {
+                    <!-- تایم‌لاین پیش‌فرض -->
+                    <div class="flex items-start gap-3">
+                      <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">✓</div>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <h5 class="text-xs font-bold text-gray-800">تایید سفارش و پرداخت</h5>
+                          <span class="text-[10px] text-gray-400">ساعت ۰۸:۳۰</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-0.5">پرداخت موفق از اعتبار کیف پول</p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">✓</div>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <h5 class="text-xs font-bold text-gray-800">طبخ بهداشتی و کنترل کیفیت</h5>
+                          <span class="text-[10px] text-gray-400">ساعت ۱۰:۴۵</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-0.5">کیترینگ اختصاصی با بسته‌بندی بهداشتی گرم</p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <div [class]="trackingOrder.status === 'active' ? 'w-6 h-6 rounded-full bg-[#f97352] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 animate-pulse' : 'w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0'">
+                        {{ trackingOrder.status === 'active' ? '🚚' : '✓' }}
+                      </div>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <h5 [class]="trackingOrder.status === 'active' ? 'text-xs font-black text-[#f97352]' : 'text-xs font-bold text-gray-800'">
+                            ارسال به مدرسه
+                          </h5>
+                          <span class="text-[10px] text-gray-400">ساعت ۱۱:۴۰</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-0.5">با خودروی مجهز به گرم‌خانه برای حفظ تازگی غذا</p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <div [class]="trackingOrder.status === 'delivered' ? 'w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0' : 'w-6 h-6 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0'">
+                        {{ trackingOrder.status === 'delivered' ? '✓' : '📍' }}
+                      </div>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <h5 [class]="trackingOrder.status === 'delivered' ? 'text-xs font-bold text-gray-800' : 'text-xs font-bold text-gray-400'">
+                            تحویل در بوفه مدرسه
+                          </h5>
+                          <span class="text-[10px] text-gray-400">{{ trackingOrder.deliveryTime }}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-0.5">تحویل گرم به دانش‌آموز در زنگ ناهار</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- خلاصه فاکتور مالی و پرداخت -->
+              <div class="mt-4 p-3.5 bg-gray-50 rounded-2xl border border-black/[0.04] space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] text-gray-500">مبلغ کل اقلام</span>
+                  <div class="text-left">
+                    <span class="text-xs font-black text-gray-900">
+                      {{ (foodStore.selectedOrderDetail()?.totalRawPrice || trackingOrder.price).toLocaleString('fa-IR') }}
+                    </span>
+                    <span class="text-[9px] text-gray-500 mr-1">تومان</span>
+                  </div>
+                </div>
+
+                @if ((foodStore.selectedOrderDetail()?.discountAmount ?? 0) > 0) {
+                  <div class="flex items-center justify-between text-emerald-600 text-[11px]">
+                    <span>تخفیف اعمال‌شده</span>
+                    <span>{{ (foodStore.selectedOrderDetail()?.discountAmount ?? 0).toLocaleString('fa-IR') }} - تومان</span>
+                  </div>
                 }
-              </div>
 
-              <!-- Steps List -->
-              <div class="space-y-3 px-1">
-                <div class="flex items-start gap-3">
-                  <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">✓</div>
-                  <div class="flex-1">
-                    <div class="flex items-center justify-between">
-                      <h5 class="text-xs font-bold text-gray-800">تایید سفارش و پرداخت</h5>
-                      <span class="text-[10px] text-gray-400">ساعت ۰۸:۳۰</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 mt-0.5">پرداخت موفق از اعتبار کیف پول</p>
+                <div class="pt-2 border-t border-gray-200/60 flex items-center justify-between">
+                  <div>
+                    <span class="text-xs font-black text-gray-900 block">مبلغ پرداختی نهایی</span>
+                    <span class="text-[10px] text-gray-400 font-mono">
+                      کد رهگیری: {{ foodStore.selectedOrderDetail()?.trackingCode || trackingOrder.trackingCode }}
+                    </span>
                   </div>
-                </div>
-
-                <div class="flex items-start gap-3">
-                  <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">✓</div>
-                  <div class="flex-1">
-                    <div class="flex items-center justify-between">
-                      <h5 class="text-xs font-bold text-gray-800">طبخ بهداشتی و کنترل کیفیت</h5>
-                      <span class="text-[10px] text-gray-400">ساعت ۱۰:۴۵</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 mt-0.5">کیترینگ اختصاصی با بسته‌بندی بهداشتی گرم</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3">
-                  <div [class]="trackingOrder.status === 'active' ? 'w-6 h-6 rounded-full bg-[#f97352] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 animate-pulse' : 'w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0'">
-                    {{ trackingOrder.status === 'active' ? '🚚' : '✓' }}
-                  </div>
-                  <div class="flex-1">
-                    <div class="flex items-center justify-between">
-                      <h5 [class]="trackingOrder.status === 'active' ? 'text-xs font-black text-[#f97352]' : 'text-xs font-bold text-gray-800'">
-                        ارسال به مدرسه
-                      </h5>
-                      <span class="text-[10px] text-gray-400">ساعت ۱۱:۴۰</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 mt-0.5">با خودروی مجهز به گرم‌خانه برای حفظ تازگی غذا</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3">
-                  <div [class]="trackingOrder.status === 'delivered' ? 'w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0' : 'w-6 h-6 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0'">
-                    {{ trackingOrder.status === 'delivered' ? '✓' : '📍' }}
-                  </div>
-                  <div class="flex-1">
-                    <div class="flex items-center justify-between">
-                      <h5 [class]="trackingOrder.status === 'delivered' ? 'text-xs font-bold text-gray-800' : 'text-xs font-bold text-gray-400'">
-                        تحویل در بوفه مدرسه
-                      </h5>
-                      <span class="text-[10px] text-gray-400">{{ trackingOrder.deliveryTime }}</span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-0.5">تحویل گرم به دانش‌آموز در زنگ ناهار</p>
+                  <div class="text-left">
+                    <span class="text-sm font-black text-[#f97352]">
+                      {{ (foodStore.selectedOrderDetail()?.finalPayablePrice || trackingOrder.price).toLocaleString('fa-IR') }}
+                    </span>
+                    <span class="text-[10px] text-gray-500 mr-1">تومان</span>
                   </div>
                 </div>
               </div>
-            </div>
+            }
 
-            <!-- Payment Summary -->
-            <div class="mt-4 p-3.5 bg-gray-50 rounded-2xl flex items-center justify-between border border-black/[0.04]">
-              <div>
-                <span class="text-[11px] text-gray-500 block">مبلغ کل پرداخت شده</span>
-                <span class="text-[10px] text-gray-400 font-mono">کد رهگیری: {{ trackingOrder.trackingCode }}</span>
-              </div>
-              <div class="text-left">
-                <span class="text-sm font-black text-gray-900">{{ trackingOrder.price.toLocaleString('fa-IR') }}</span>
-                <span class="text-[10px] text-gray-500 mr-1">تومان</span>
-              </div>
-            </div>
-
-            <!-- Modal Action Buttons -->
+            <!-- دکمه‌های اقدام انتهای مودال -->
             <div class="mt-5 flex items-center gap-2">
-              @if (trackingOrder.status === 'delivered') {
+              @if ((foodStore.selectedOrderDetail()?.status || trackingOrder.status) === 'delivered') {
                 <button
                   type="button"
-                  (click)="handleReorder(trackingOrder); selectedTrackingOrder.set(null)"
+                  (click)="handleReorder(trackingOrder); closeOrderDetails()"
                   class="flex-1 py-3 bg-[#f97352] hover:bg-[#e05432] active:scale-95 text-white text-xs font-black rounded-xl shadow-xs transition cursor-pointer text-center">
                   سفارش مجدد این ناهار
                 </button>
               }
               <button
                 type="button"
-                (click)="selectedTrackingOrder.set(null)"
-                [class]="trackingOrder.status === 'delivered' ? 'px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer' : 'w-full py-3 bg-[#141517] hover:bg-black active:scale-95 text-white text-xs font-black rounded-xl shadow-xs transition cursor-pointer'">
+                (click)="closeOrderDetails()"
+                [class]="(foodStore.selectedOrderDetail()?.status || trackingOrder.status) === 'delivered' ? 'px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer' : 'w-full py-3 bg-[#141517] hover:bg-black active:scale-95 text-white text-xs font-black rounded-xl shadow-xs transition cursor-pointer'">
                 بستن پنجره
               </button>
             </div>
@@ -384,14 +526,14 @@ import {SchoolOrder} from '../../models/food.model';
     </div>
   `,
 })
-export class OrdersPage implements OnDestroy {
+export class OrdersPage implements OnInit, OnDestroy {
   readonly foodStore = inject(FoodStore);
   private readonly document = inject(DOCUMENT);
 
-  // Filter tab state: 'all' | 'active' | 'delivered'
+  // تب فیلتر وضعیت جاری: 'all' | 'active' | 'delivered'
   readonly activeFilter = signal<'all' | 'active' | 'delivered'>('all');
 
-  // Selected order for live tracking modal
+  // سفارش انتخاب‌شده جاری جهت باز شدن پنجره جزئیات
   readonly selectedTrackingOrder = signal<SchoolOrder | null>(null);
 
   constructor() {
@@ -410,6 +552,11 @@ export class OrdersPage implements OnDestroy {
     });
   }
 
+  ngOnInit(): void {
+    // به محض باز شدن صفحه، ۱۰ تای اول رو طبق فیلتر جاری از دیتابیس لود می‌کنیم
+    this.foodStore.loadMyOrders(1, false, this.activeFilter());
+  }
+
   ngOnDestroy(): void {
     if (typeof document !== 'undefined' && this.document?.body) {
       this.document.body.style.overflow = '';
@@ -417,26 +564,99 @@ export class OrdersPage implements OnDestroy {
     }
   }
 
-  // Computed count of active orders
+  // لود کردن اتوماتیک ۱۰ تای بعدی با اسکرول نامحدود کاربر به انتهای صفحه
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    if (typeof window === 'undefined') return;
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const threshold = document.documentElement.scrollHeight - 200;
+    if (scrollPosition >= threshold) {
+      if (this.foodStore.ordersHasMore() && !this.foodStore.isOrdersLoadingMore() && !this.foodStore.isOrdersLoading()) {
+        this.foodStore.loadMoreOrders(this.activeFilter());
+      }
+    }
+  }
+
+  // تغییر تب فیلتر و واکشی مجدد صفحه اول از سرور
+  setFilter(filter: 'all' | 'active' | 'delivered'): void {
+    this.activeFilter.set(filter);
+    this.foodStore.loadMyOrders(1, false, filter);
+  }
+
+  // باز کردن پنجره جزئیات و لود تنبل اطلاعات عمیق سفارش
+  openOrderDetails(order: OrderSummaryItem | SchoolOrder): void {
+    const baseOrder: SchoolOrder = {
+      id: order.id,
+      childId: order.childId,
+      childName: order.childName,
+      childAvatar: order.childAvatar || '/assets/avatars/ali.svg',
+      school: this.getSchoolName(order),
+      grade: order.grade,
+      foodTitle: order.foodTitle,
+      foodSubtitle: order.foodSubtitle,
+      foodEmoji: order.foodEmoji,
+      date: this.getOrderDate(order),
+      deliveryTime: order.deliveryTime,
+      status: order.status,
+      statusText: order.statusText,
+      price: order.price,
+      trackingCode: order.trackingCode,
+    };
+    this.selectedTrackingOrder.set(baseOrder);
+    this.foodStore.loadOrderDetail(order.id);
+  }
+
+  // بستن مودال و پاک‌کردن اطلاعات لود شده
+  closeOrderDetails(): void {
+    this.selectedTrackingOrder.set(null);
+    this.foodStore.clearOrderDetail();
+  }
+
+  // محاسبه تعداد کل سفارش‌ها از استور با اولویت دیتابیس
+  readonly totalCount = computed(() => {
+    return this.foodStore.ordersTotalCount() || this.foodStore.pagedOrders().length || this.foodStore.schoolOrders().length;
+  });
+
+  // محاسبه تعداد سفارش‌های فعال جهت نمایش در تب
   readonly activeCount = computed(() => {
+    const storeCount = this.foodStore.ordersActiveCount();
+    if (storeCount > 0) return storeCount;
     return this.foodStore.schoolOrders().filter((o) => o.status === 'active').length;
   });
 
-  // Filtered orders based on active status filter
-  readonly filteredOrders = computed(() => {
+  // سفارش‌های قابل نمایش در صفحه (اولویت با لیست واکشی‌شده ۱۰تایی دیتابیس)
+  readonly displayOrders = computed(() => {
+    const paged = this.foodStore.pagedOrders();
+    if (paged.length > 0) {
+      return paged;
+    }
+    // فال‌بک لوکال برای مواردی مثل تست‌های کامپوننت و نبود اینترنت
     const filter = this.activeFilter();
-
     return this.foodStore.schoolOrders().filter((order) => {
-      // Status filter
       if (filter === 'active' && order.status !== 'active') return false;
       if (filter === 'delivered' && order.status !== 'delivered') return false;
-
       return true;
     });
   });
 
+  // جهت سازگاری با کدهای تست قبلی
+  readonly filteredOrders = this.displayOrders;
+
+  // توابع کمکی ساده برای سازگاری بین مدل سرور و مدل کلاینت
+  getOrderCode(order: OrderSummaryItem | SchoolOrder): string {
+    return 'orderCode' in order ? order.orderCode : order.id;
+  }
+
+  getSchoolName(order: OrderSummaryItem | SchoolOrder): string {
+    return 'schoolName' in order ? order.schoolName : (order as SchoolOrder).school;
+  }
+
+  getOrderDate(order: OrderSummaryItem | SchoolOrder): string {
+    return 'dateLabel' in order ? order.dateLabel : (order as SchoolOrder).date;
+  }
+
   resetFilters(): void {
-    this.activeFilter.set('all');
+    this.setFilter('all');
   }
 
   handleReorder(order: SchoolOrder): void {
