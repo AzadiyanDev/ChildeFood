@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 **/ClientApp/node_modules/
 **/ClientApp/dist/
 **/ClientApp/.angular/
+
+# VS Code C# Dev Tools - Auto-generated runners
+.vscodecsdt/Runners/
