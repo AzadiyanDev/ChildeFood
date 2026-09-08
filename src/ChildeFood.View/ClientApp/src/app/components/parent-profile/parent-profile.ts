@@ -17,10 +17,16 @@ import {FoodStore} from '../../services/food-store';
             class="flex items-center gap-3 text-right cursor-pointer bg-transparent border-0 p-0 transition-transform active:scale-[0.98] min-h-[44px]">
             
             <!-- آیکون آواتار والد -->
-            <div class="w-11 h-11 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-700 flex-shrink-0">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
+            <div class="w-11 h-11 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-700 flex-shrink-0 overflow-hidden">
+              @if (foodStore.isImageAvatar(foodStore.parentProfile().avatar)) {
+                <img [src]="foodStore.parentProfile().avatar" alt="Parent Avatar" class="w-full h-full object-cover" />
+              } @else if (foodStore.parentProfile().avatar) {
+                <span class="text-xl">{{ foodStore.parentProfile().avatar }}</span>
+              } @else {
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              }
             </div>
 
             <!-- مشخصات والد -->

@@ -236,8 +236,13 @@ import {FoodStore} from '../../services/food-store';
 
                 <!-- Avatar Preview with Camera Overlay -->
                 <div class="relative mb-3">
-                  <div class="w-24 h-24 rounded-full bg-white border-2 border-[#f97352]/30 shadow-md flex items-center justify-center text-4xl overflow-hidden">
-                    @if (foodStore.isImageAvatar(tempAvatar())) {
+                  <div class="w-24 h-24 rounded-full bg-white border-2 border-[#f97352]/30 shadow-md flex items-center justify-center text-4xl overflow-hidden relative">
+                    @if (isUploadingAvatar()) {
+                      <svg class="animate-spin h-8 w-8 text-[#f97352]" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    } @else if (foodStore.isImageAvatar(tempAvatar())) {
                       <img [src]="tempAvatar()" alt="Parent Avatar" class="w-full h-full object-cover" />
                     } @else {
                       <span>{{ tempAvatar() }}</span>
@@ -248,8 +253,9 @@ import {FoodStore} from '../../services/food-store';
                   <button
                     type="button"
                     (click)="avatarFileInput.click()"
+                    [disabled]="isUploadingAvatar()"
                     aria-label="تغییر یا آپلود عکس پروفایل"
-                    class="absolute bottom-0 left-0 w-8 h-8 rounded-full bg-[#f97352] text-white flex items-center justify-center shadow-md hover:bg-[#e05432] active:scale-95 transition cursor-pointer border-2 border-white">
+                    class="absolute bottom-0 left-0 w-8 h-8 rounded-full bg-[#f97352] text-white flex items-center justify-center shadow-md hover:bg-[#e05432] active:scale-95 transition cursor-pointer border-2 border-white disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                       <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
@@ -270,37 +276,38 @@ import {FoodStore} from '../../services/food-store';
                   <button
                     type="button"
                     (click)="avatarFileInput.click()"
-                    class="px-3.5 py-1.5 rounded-xl bg-white border border-gray-200 text-[#f97352] text-xs font-bold shadow-2xs hover:bg-orange-50 active:scale-95 transition cursor-pointer flex items-center gap-1.5">
+                    [disabled]="isUploadingAvatar()"
+                    class="px-3.5 py-1.5 rounded-xl bg-white border border-gray-200 text-[#f97352] text-xs font-bold shadow-2xs hover:bg-orange-50 active:scale-95 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                     </svg>
-                    <span>آپلود عکس از گوشی / سیستم</span>
+                    <span>{{ isUploadingAvatar() ? 'در حال آپلود عکس...' : 'آپلود عکس از گوشی / سیستم' }}</span>
                   </button>
 
                   @if (foodStore.isImageAvatar(tempAvatar())) {
                     <button
                       type="button"
-                      (click)="tempAvatar.set('👩‍💼')"
+                      (click)="tempAvatar.set('/assets/avatars/parent-mother-1.svg')"
                       class="px-2.5 py-1.5 rounded-xl bg-white border border-gray-200 text-rose-600 text-xs font-bold hover:bg-rose-50 active:scale-95 transition cursor-pointer">
                       حذف عکس
                     </button>
                   }
                 </div>
 
-                <!-- Quick Avatar Presets -->
+                <!-- Quick Avatar Presets: SVG & Classic -->
                 <div class="w-full pt-2 border-t border-gray-200/50">
-                  <span class="text-[10px] text-gray-400 font-bold block mb-1.5">یا انتخاب از آواتارهای پیش‌فرض:</span>
+                  <span class="text-[10px] text-gray-400 font-bold block mb-1.5">یا انتخاب از وکتورهای اختصاصی والد:</span>
                   <div class="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
-                    @for (preset of avatarPresets; track preset) {
+                    @for (preset of avatarSvgPresets; track preset.url) {
                       <button
                         type="button"
-                        (click)="tempAvatar.set(preset)"
+                        (click)="tempAvatar.set(preset.url)"
                         [class]="
-                          tempAvatar() === preset
-                            ? 'w-10 h-10 rounded-2xl bg-orange-100 border-2 border-[#f97352] text-xl flex items-center justify-center shadow-xs transition transform scale-110 cursor-pointer'
-                            : 'w-10 h-10 rounded-2xl bg-white border border-gray-200 text-lg flex items-center justify-center hover:bg-gray-100 active:scale-95 transition cursor-pointer'
+                          tempAvatar() === preset.url
+                            ? 'w-11 h-11 rounded-2xl bg-orange-50 border-2 border-[#f97352] p-1 flex items-center justify-center shadow-xs transition transform scale-110 cursor-pointer overflow-hidden'
+                            : 'w-11 h-11 rounded-2xl bg-white border border-gray-200 p-1 flex items-center justify-center hover:bg-gray-100 active:scale-95 transition cursor-pointer overflow-hidden'
                         ">
-                        {{ preset }}
+                        <img [src]="preset.url" [alt]="preset.title" class="w-full h-full object-cover" />
                       </button>
                     }
                   </div>
@@ -415,12 +422,22 @@ import {FoodStore} from '../../services/food-store';
               <button
                 type="button"
                 id="btn-save-parent-profile"
+                [disabled]="isSavingProfile() || isUploadingAvatar()"
                 (click)="handleSaveFullProfile()"
-                class="flex-[2] py-3.5 bg-[#f97352] hover:bg-[#e05432] active:scale-98 text-white text-xs font-black rounded-2xl shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transition cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                <span>ذخیره تغییرات حساب</span>
+                class="flex-[2] py-3.5 bg-[#f97352] hover:bg-[#e05432] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none text-white text-xs font-black rounded-2xl shadow-lg shadow-orange-500/25 flex items-center justify-center transition cursor-pointer">
+                @if (isSavingProfile()) {
+                  <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                } @else {
+                  <div class="flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    <span>ذخیره تغییرات حساب</span>
+                  </div>
+                }
               </button>
             </div>
 
@@ -487,6 +504,18 @@ export class ProfilePage implements OnDestroy {
   readonly tempEmail = signal<string>('');
   readonly tempAvatar = signal<string>('👩‍💼');
 
+  readonly isUploadingAvatar = signal<boolean>(false);
+  readonly isSavingProfile = signal<boolean>(false);
+
+  readonly avatarSvgPresets = [
+    { url: '/assets/avatars/parent-mother-1.svg', title: 'مادر با مقنعه' },
+    { url: '/assets/avatars/parent-father-1.svg', title: 'پدر رسمی' },
+    { url: '/assets/avatars/parent-mother-2.svg', title: 'مادر شاد' },
+    { url: '/assets/avatars/parent-father-2.svg', title: 'پدر پرانرژی' },
+    { url: '/assets/avatars/parent-mother-3.svg', title: 'مادر مدرن' },
+    { url: '/assets/avatars/parent-father-3.svg', title: 'پدر کت و شلواری' },
+  ];
+
   readonly avatarPresets = ['👩‍💼', '👨‍💼', '👩', '👨', '🧑‍💼', '🧕', '🧑‍🏫', '🎒'];
   readonly rolesList = ['مادر', 'پدر', 'سرپرست قانونی'];
 
@@ -528,23 +557,37 @@ export class ProfilePage implements OnDestroy {
     this.showEditProfileModal.set(false);
   }
 
-  onAvatarFileSelected(event: Event): void {
+  async onAvatarFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result) {
-          this.tempAvatar.set(result);
-          this.showToast('تصویر پروفایل انتخاب شد');
-        }
-      };
-      reader.readAsDataURL(file);
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      this.showToast('حجم فایل نباید بیشتر از ۱۰ مگابایت باشد.');
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingAvatar.set(true);
+    this.showToast('در حال بارگذاری عکس روی سرور...');
+
+    try {
+      const res = await this.foodStore.uploadAvatar(file);
+      if (res.success && res.url) {
+        this.tempAvatar.set(res.url);
+        this.showToast('تصویر پروفایل با موفقیت آپلود شد.');
+      } else {
+        this.showToast(res.message || 'خطا در بارگذاری عکس.');
+      }
+    } catch {
+      this.showToast('خطا در ارتباط با سرور برای آپلود تصویر.');
+    } finally {
+      this.isUploadingAvatar.set(false);
+      input.value = '';
     }
   }
 
-  handleSaveFullProfile(): void {
+  async handleSaveFullProfile(): Promise<void> {
     const name = this.tempName().trim();
     if (!name) {
       this.showToast('لطفاً نام و نام خانوادگی را وارد کنید');
@@ -557,18 +600,28 @@ export class ProfilePage implements OnDestroy {
       return;
     }
 
-    this.foodStore.parentProfile.update((profile) => ({
-      ...profile,
-      name: name,
-      phone: phone,
-      role: this.tempRole(),
-      nationalId: this.tempNationalId().trim(),
-      email: this.tempEmail().trim(),
-      avatar: this.tempAvatar(),
-    }));
+    this.isSavingProfile.set(true);
 
-    this.showEditProfileModal.set(false);
-    this.showToast('مشخصات حساب کاربری با موفقیت ذخیره شد.');
+    try {
+      const res = await this.foodStore.saveParentProfile({
+        fullName: name,
+        roleTitle: this.tempRole(),
+        nationalId: this.tempNationalId().trim(),
+        address: this.foodStore.parentProfile().address,
+        avatarUrl: this.tempAvatar(),
+      });
+
+      if (res.success) {
+        this.showEditProfileModal.set(false);
+        this.showToast('مشخصات حساب کاربری با موفقیت در سرور ذخیره شد.');
+      } else {
+        this.showToast(res.message || 'خطا در ذخیره مشخصات در سرور.');
+      }
+    } catch {
+      this.showToast('خطا در برقراری ارتباط با سرور.');
+    } finally {
+      this.isSavingProfile.set(false);
+    }
   }
 
   toggleSmsAlerts(): void {
@@ -590,8 +643,8 @@ export class ProfilePage implements OnDestroy {
     this.showLogoutConfirm.set(false);
     this.showToast('با موفقیت از حساب کاربری خارج شدید.');
     setTimeout(() => {
-      this.foodStore.goToHome();
-    }, 1000);
+      this.foodStore.logout();
+    }, 800);
   }
 }
 
