@@ -42,7 +42,19 @@ app.UseAuthorization();
 // مپ کردن اندپوینت‌های کنترلرها
 app.MapControllers();
 
-// ۶. سرو کردن ویوی انگولار از پوشه dist با هدرهای قوی ضد کش برای نمایش قطعی آخرین تغییرات
+// ۶. سرو کردن فایل‌های آپلود شده کاربران (آواتارها و تصاویر)
+var uploadsDir = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsDir),
+    RequestPath = "/uploads"
+});
+
+// ۷. سرو کردن ویوی انگولار از پوشه dist با هدرهای قوی ضد کش برای نمایش قطعی آخرین تغییرات
 var clientAppDist = Path.Combine(builder.Environment.ContentRootPath, "ClientApp", "dist", "app", "browser");
 if (Directory.Exists(clientAppDist))
 {
