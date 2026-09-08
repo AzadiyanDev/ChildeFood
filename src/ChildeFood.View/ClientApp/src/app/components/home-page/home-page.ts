@@ -230,17 +230,12 @@ export interface HomeOrderDisplay {
                   </div>
                 </div>
 
-                <!-- سمت چپ: وضعیت سفارش و نوار پیشرفت کوچک (Progress) -->
-                <div class="flex-shrink-0 flex flex-col items-end">
+                <!-- سمت چپ: نوار پیشرفت مرحله وضعیت (Progress) بدون تگ‌های تکراری بالایی -->
+                <div class="flex-shrink-0 flex flex-col items-end justify-center">
                   @if (order.statusBadgeType === 'preparing') {
-                    <span class="px-2.5 py-1 rounded-full bg-orange-50 text-[#FF6B3D] border border-orange-200/60 text-[10px] font-bold inline-flex items-center gap-1">
-                      <span>🟠</span>
-                      <span>{{ order.statusBadgeText }}</span>
-                    </span>
-
                     <!-- نوار پیشرفت مرحله آماده‌سازی (━━━━━━○○) -->
-                    <div class="mt-2 flex flex-col items-end" aria-label="پیشرفت آماده‌سازی">
-                      <span class="text-[9px] text-[#8F8F8F] font-normal mb-1">آماده‌سازی</span>
+                    <div class="flex flex-col items-end" aria-label="پیشرفت آماده‌سازی">
+                      <span class="text-[10px] font-bold text-[#FF6B3D] mb-1.5">آماده‌سازی</span>
                       <div class="flex items-center gap-1" dir="ltr">
                         <span class="w-3 h-1.5 rounded-full bg-[#FF6B3D]"></span>
                         <span class="w-3 h-1.5 rounded-full bg-[#FF6B3D]"></span>
@@ -250,14 +245,9 @@ export interface HomeOrderDisplay {
                       </div>
                     </div>
                   } @else {
-                    <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold inline-flex items-center gap-1">
-                      <span>🟢</span>
-                      <span>{{ order.statusBadgeText }}</span>
-                    </span>
-
                     <!-- نوار پیشرفت مرحله تحویل تکمیل شده (━━━━━━●●) -->
-                    <div class="mt-2 flex flex-col items-end" aria-label="تحویل به مدرسه">
-                      <span class="text-[9px] text-emerald-600 font-normal mb-1">تحویل به مدرسه</span>
+                    <div class="flex flex-col items-end" aria-label="تحویل به مدرسه">
+                      <span class="text-[10px] font-bold text-emerald-600 mb-1.5">تحویل به مدرسه</span>
                       <div class="flex items-center gap-1" dir="ltr">
                         <span class="w-3 h-1.5 rounded-full bg-emerald-500"></span>
                         <span class="w-3 h-1.5 rounded-full bg-emerald-500"></span>

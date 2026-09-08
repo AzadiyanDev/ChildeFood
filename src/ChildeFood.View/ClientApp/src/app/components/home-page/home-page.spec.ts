@@ -159,10 +159,10 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(ordersText).toContain('جوجه کباب');
     expect(ordersText).toContain('پرس کامل');
     expect(ordersText).toContain('۱۰ شهریور');
-    expect(ordersText).toContain('در حال آماده‌سازی');
+    expect(ordersText).toContain('آماده‌سازی');
 
     expect(ordersText).toContain('ماکارونی');
-    expect(ordersText).toContain('تحویل شده');
+    expect(ordersText).toContain('تحویل به مدرسه');
 
     // بررسی وجود نوار پیشرفت وضعیت (Progress)
     const progressEl = compiled.querySelector('[aria-label="پیشرفت آماده‌سازی"]');
@@ -399,16 +399,16 @@ describe('HomePage Component Suite — پیاده‌سازی اصلاحات ۷ �
     expect(compiled.querySelector('#wallet-last-recharge')?.textContent).toContain('۱۰۰,۰۰۰');
   });
 
-  // تست لبه ۴: آیکون‌های وضعیت سفارشات
-  it('نشان وضعیت سفارش باید دارای ایموجی رنگی نارنجی برای در حال آماده‌سازی و سبز برای تحویل شده باشد', () => {
+  // تست لبه ۴: وضعیت سفارشات از طریق نوار پیشرفت
+  it('نشان وضعیت سفارش باید دارای نوار پیشرفت وضعیت برای آماده‌سازی و تحویل به مدرسه باشد', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const prepCard = compiled.querySelector('#order-card-ORD-1042');
-    expect(prepCard?.textContent).toContain('🟠');
-    expect(prepCard?.textContent).toContain('در حال آماده‌سازی');
+    expect(prepCard?.textContent).toContain('آماده‌سازی');
+    expect(prepCard?.textContent).not.toContain('در حال آماده‌سازی');
 
     const deliveredCard = compiled.querySelector('#order-card-ORD-1039');
-    expect(deliveredCard?.textContent).toContain('🟢');
-    expect(deliveredCard?.textContent).toContain('تحویل شده');
+    expect(deliveredCard?.textContent).toContain('تحویل به مدرسه');
+    expect(deliveredCard?.textContent).not.toContain('تحویل شده');
   });
 
   // تست ارگونومی لمسی موبایل
