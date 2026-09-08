@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad-amirali" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0FDF4"/>
+      <stop offset="100%" stop-color="#DCFCE7"/>
+    </linearGradient>
+    <linearGradient id="shirt-amirali" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="skin-amirali" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FDE2C6"/>
+      <stop offset="100%" stop-color="#F7CAA5"/>
+    </linearGradient>
+    <linearGradient id="hair-amirali" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3F2618"/>
+      <stop offset="100%" stop-color="#1F130B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-grad-amirali)" stroke="#BBF7D0" stroke-width="3"/>
+
+  <!-- Body / School Shirt -->
+  <path d="M26 114 C26 92 38 82 60 82 C82 82 94 92 94 114 Z" fill="url(#shirt-amirali)"/>
+  <!-- Sporty Collar & Zipper -->
+  <polygon points="60,95 50,82 60,86 70,82" fill="#FFFFFF"/>
+  <rect x="58.5" y="86" width="3" height="28" fill="#D1D5DB" rx="1.5"/>
+
+  <!-- Neck -->
+  <rect x="52" y="70" width="16" height="16" rx="4" fill="#F7CAA5"/>
+
+  <!-- Ears -->
+  <circle cx="35" cy="56" r="7" fill="#F7CAA5"/>
+  <circle cx="85" cy="56" r="7" fill="#F7CAA5"/>
+  <circle cx="35" cy="56" r="4" fill="#ECA277"/>
+  <circle cx="85" cy="56" r="4" fill="#ECA277"/>
+
+  <!-- Head / Face -->
+  <ellipse cx="60" cy="54" rx="24" ry="26" fill="url(#skin-amirali)"/>
+
+  <!-- Cheeks -->
+  <circle cx="43" cy="60" r="4" fill="#FB923C" opacity="0.3"/>
+  <circle cx="77" cy="60" r="4" fill="#FB923C" opacity="0.3"/>
+
+  <!-- Eyes -->
+  <circle cx="48" cy="53" r="3.2" fill="#1E293B"/>
+  <circle cx="72" cy="53" r="3.2" fill="#1E293B"/>
+  <circle cx="47" cy="51.5" r="1.1" fill="#FFFFFF"/>
+  <circle cx="71" cy="51.5" r="1.1" fill="#FFFFFF"/>
+
+  <!-- Eyebrows with a sporty slight curve -->
+  <path d="M42 46 Q47 43 53 45" stroke="#2D1E16" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+  <path d="M67 45 Q73 43 78 46" stroke="#2D1E16" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+
+  <!-- Nose -->
+  <path d="M58 57 Q60 60 62 57" stroke="#E08E60" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+  <!-- Confident Smile -->
+  <path d="M50 64 Q60 72 70 64" stroke="#7C2D12" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M54 66 Q60 70 66 66" fill="#FFFFFF" opacity="0.85"/>
+
+  <!-- Modern Textured / Spiky Hair -->
+  <path d="M34 50 C32 28 44 19 60 19 C76 19 88 28 86 50 C82 36 73 30 60 30 C46 30 38 37 34 50 Z" fill="url(#hair-amirali)"/>
+  <path d="M44 26 Q46 16 54 22" fill="url(#hair-amirali)"/>
+  <path d="M52 20 Q58 13 65 19" fill="url(#hair-amirali)"/>
+  <path d="M63 20 Q70 15 74 24" fill="url(#hair-amirali)"/>
+  <path d="M37 36 Q43 28 50 31" fill="url(#hair-amirali)"/>
+</svg>
