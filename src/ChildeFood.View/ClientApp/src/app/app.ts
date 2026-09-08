@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
 import {BottomNav} from './components/bottom-nav/bottom-nav';
 import {CartDrawer} from './components/cart-drawer/cart-drawer';
 import {OrdersDrawer} from './components/orders-drawer/orders-drawer';
@@ -12,6 +12,11 @@ import {OrdersPage} from './components/orders-page/orders-page';
 import {ProfilePage} from './components/profile-page/profile-page';
 import {CalendarPage} from './components/calendar-page/calendar-page';
 import {CheckoutPage} from './components/checkout-page/checkout-page';
+import {AuthPhone} from './components/auth-phone/auth-phone';
+import {AuthOtp} from './components/auth-otp/auth-otp';
+import {ParentOnboarding} from './components/parent-onboarding/parent-onboarding';
+import {ChildOnboarding} from './components/child-onboarding/child-onboarding';
+import {TopToast} from './components/top-toast/top-toast';
 import {FoodStore} from './services/food-store';
 
 @Component({
@@ -26,6 +31,11 @@ import {FoodStore} from './services/food-store';
     ChildrenPage,
     OrdersPage,
     ProfilePage,
+    AuthPhone,
+    AuthOtp,
+    ParentOnboarding,
+    ChildOnboarding,
+    TopToast,
     BottomNav,
     CartDrawer,
     OrdersDrawer,
@@ -37,5 +47,15 @@ import {FoodStore} from './services/food-store';
 })
 export class App {
   readonly foodStore = inject(FoodStore);
-}
 
+  // تشخیص صفحات احراز هویت و آنبوردینگ جهت پنهان‌سازی نوار ناوبری پایین و عناصر مزاحم
+  readonly isAuthPage = computed(() => {
+    const page = this.foodStore.activePage();
+    return (
+      page === 'login-phone' ||
+      page === 'login-otp' ||
+      page === 'parent-onboarding' ||
+      page === 'child-onboarding'
+    );
+  });
+}

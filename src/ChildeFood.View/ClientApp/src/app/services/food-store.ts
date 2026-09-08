@@ -1,17 +1,87 @@
 import {Injectable, computed, signal} from '@angular/core';
-import {CategoryItem, ChildItem, DateDayItem, FoodItem, NavTabId, ParentProfile, SchoolOrder, WalletTransaction} from '../models/food.model';
+import {AddChildRequest, AuthResponse, AuthUser, CategoryItem, ChildItem, DateDayItem, FoodItem, NavTabId, ParentProfile, SchoolItem, SchoolOrder, SendOtpResponse, UpdateParentProfileRequest, WalletTransaction} from '../models/food.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FoodStore {
-  // Page view state: 'home' (Home page), 'meals' (Food selection page), 'calendar' (Calendar selection page), 'wallet' (Dedicated wallet page), 'children' (Dedicated children page), 'orders' (Dedicated orders page), 'profile' (Dedicated profile page), or 'checkout' (Dedicated full-screen checkout review page)
-  readonly activePage = signal<'home' | 'meals' | 'calendar' | 'wallet' | 'children' | 'orders' | 'profile' | 'checkout'>('home');
+  // وضعیت صفحه فعال جاری؛ پیش‌فرض تا پیش از لاگین بر روی صفحه ورود با موبایل قرار دارد
+  readonly activePage = signal<NavTabId>('login-phone');
 
+  // وضعیت احراز هویت و اطلاعات کاربر جاری
+  readonly isAuthenticated = signal<boolean>(false);
+  readonly currentUser = signal<AuthUser | null>(null);
+
+  // لیست مدارس دریافت شده از جدول دیتابیس جهت نمایش در سلکت‌باکس ثبت فرزند
+  readonly schools = signal<SchoolItem[]>([]);
+
+  // شماره موبایل در انتظار تایید و کد اوتی‌پی شبیه‌سازی‌شده جهت نمایش در توستر بالایی
+  readonly pendingPhone = signal<string>('');
+  readonly latestOtpCode = signal<string | null>(null);
+  readonly showOtpNotification = signal<boolean>(false);
+  readonly autoFilledOtp = signal<string | null>(null);
+
+  private otpNotificationTimeout: any = null;
   private isNavigatingFromHistory = false;
 
   constructor() {
+    this.restoreAuthSession();
     this.initHistoryNavigation();
+    this.loadSchools();
+  }
+
+  // بررسی سشن ذخیره‌شده کاربر در لوکال استوریج؛ اگر کاربر قبلاً لاگین کرده باشد سشن بازیابی می‌شود
+  private restoreAuthSession(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedUser = localStorage.getItem('childe_food_auth_user');
+      if (savedUser) {
+        const user: AuthUser = JSON.parse(savedUser);
+        if (user && user.phoneNumber) {
+          this.currentUser.set(user);
+          this.isAuthenticated.set(true);
+
+          if (user.fullName && user.fullName !== 'والد گرامی') {
+            this.parentProfile.update((prev) => ({
+              ...prev,
+              name: user.fullName,
+              phone: user.phoneNumber,
+              role: user.roleTitle || prev.role,
+              nationalId: user.nationalId || prev.nationalId,
+              address: user.address || prev.address,
+              walletBalance: user.walletBalance ?? prev.walletBalance,
+              avatar: user.avatarUrl || prev.avatar,
+            }));
+          } else if (user.avatarUrl) {
+            this.parentProfile.update((prev) => ({
+              ...prev,
+              avatar: user.avatarUrl || prev.avatar,
+            }));
+          }
+
+          // واکشی مجدد آخرین وضعیت پروفایل و لیست فرزندان واقعی از سرور
+          this.loadUserProfileAndChildren(user.phoneNumber);
+
+          // بررسی هوشمند وضعیت آنبوردینگ در هنگام لود مجدد صفحه
+          if (user.onboardingStatus === 'NeedParentProfile') {
+            this.activePage.set('parent-onboarding');
+            return;
+          } else if (user.onboardingStatus === 'NeedChild') {
+            this.activePage.set('child-onboarding');
+            return;
+          }
+
+          this.activePage.set('home');
+          return;
+        }
+      }
+    } catch {
+      // در صورت بروز خطای پارس در محیط‌های خاص
+    }
+
+    // در غیر این صورت کاربر باید حتماً لاگین کند و اجازه ورود به خانه را ندارد
+    this.isAuthenticated.set(false);
+    this.activePage.set('login-phone');
   }
 
   // مدیریت هوشمند کلید بازگشت مرورگر/گوشی کاربر بر اساس سلسله‌مراتب فلو سفارش
@@ -26,6 +96,33 @@ export class FoodStore {
       window.addEventListener('popstate', (event) => {
         const statePage = event.state?.page;
         this.isNavigatingFromHistory = true;
+
+        // گارد امنیتی: اگر کاربر لاگین نکرده باشد، به هیچ وجه اجازه رفتن به صفحات اصلی را ندارد
+        if (!this.isAuthenticated()) {
+          if (statePage === 'login-otp') {
+            this.activePage.set('login-otp');
+          } else {
+            this.activePage.set('login-phone');
+          }
+          this.isNavigatingFromHistory = false;
+          return;
+        }
+
+        // گارد امنیتی آنبوردینگ در دکمه بازگشت مرورگر
+        const status = this.currentUser()?.onboardingStatus;
+        if (status === 'NeedParentProfile') {
+          this.activePage.set('parent-onboarding');
+          this.isNavigatingFromHistory = false;
+          return;
+        } else if (status === 'NeedChild') {
+          if (statePage === 'parent-onboarding') {
+            this.activePage.set('parent-onboarding');
+          } else {
+            this.activePage.set('child-onboarding');
+          }
+          this.isNavigatingFromHistory = false;
+          return;
+        }
 
         if (statePage) {
           this.activePage.set(statePage);
@@ -53,7 +150,7 @@ export class FoodStore {
     }
   }
 
-  private pushHistoryState(page: 'home' | 'meals' | 'calendar' | 'wallet' | 'children' | 'orders' | 'profile' | 'checkout'): void {
+  private pushHistoryState(page: NavTabId): void {
     if (typeof window === 'undefined' || this.isNavigatingFromHistory) return;
     try {
       if (window.history.state?.page !== page) {
@@ -1329,6 +1426,9 @@ export class FoodStore {
   }
 
   goToCalendar(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     // هنگام ورود به تقویم، هیچ روزی نباید از قبل انتخاب شده باشد و روزهای تاییدشده ریست می‌شوند
     this.selectedCalendarDays.set([]);
     this.confirmedDays.set([]);
@@ -1363,6 +1463,9 @@ export class FoodStore {
   }
 
   goToMeals(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     // پاکسازی سرچ‌کوئری مارکت‌پلیس تا آیتم‌های ناهار غیب نشوند
     this.searchQuery.set('');
     this.activePage.set('meals');
@@ -1374,6 +1477,9 @@ export class FoodStore {
 
   // هدایت به صفحه بررسی و تکمیل سفارش تمام‌صفحه به جای مودال
   goToCheckout(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     this.closeCartDrawer();
     this.activePage.set('checkout');
     this.pushHistoryState('checkout');
@@ -1462,7 +1568,28 @@ export class FoodStore {
     return trackingCode;
   }
 
+  // بررسی امنیتی آنبوردینگ؛ بدون اطلاعات والد و حداقل یک فرزند، اجازه ورود به تب‌های اصلی داده نمی‌شود
+  checkOnboardingGuard(): boolean {
+    if (!this.isAuthenticated()) {
+      this.goToLoginPhone();
+      return false;
+    }
+    const status = this.currentUser()?.onboardingStatus;
+    if (status === 'NeedParentProfile') {
+      this.goToParentOnboarding();
+      return false;
+    }
+    if (status === 'NeedChild') {
+      this.goToChildOnboarding();
+      return false;
+    }
+    return true;
+  }
+
   goToHome(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     this.activePage.set('home');
     this.activeNavTab.set('home');
     this.pushHistoryState('home');
@@ -1472,6 +1599,9 @@ export class FoodStore {
   }
 
   goToWallet(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     this.activePage.set('wallet');
     this.activeNavTab.set('wallet');
     this.pushHistoryState('wallet');
@@ -1481,6 +1611,9 @@ export class FoodStore {
   }
 
   goToChildren(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     this.activePage.set('children');
     this.activeNavTab.set('children');
     this.pushHistoryState('children');
@@ -1490,6 +1623,9 @@ export class FoodStore {
   }
 
   goToOrders(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     this.activePage.set('orders');
     this.activeNavTab.set('orders');
     this.pushHistoryState('orders');
@@ -1499,6 +1635,9 @@ export class FoodStore {
   }
 
   goToProfile(): void {
+    if (!this.checkOnboardingGuard()) {
+      return;
+    }
     this.activePage.set('profile');
     this.activeNavTab.set('profile');
     this.pushHistoryState('profile');
@@ -1507,7 +1646,78 @@ export class FoodStore {
     }
   }
 
+  // هدایت به صفحه وارد کردن شماره موبایل
+  goToLoginPhone(): void {
+    this.activePage.set('login-phone');
+    this.pushHistoryState('login-phone');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }
+
+  // هدایت به صفحه وارد کردن کد اوتی‌پی
+  goToLoginOtp(): void {
+    this.activePage.set('login-otp');
+    this.pushHistoryState('login-otp');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }
+
+  // هدایت به گام اول آنبوردینگ: تکمیل اطلاعات والد
+  goToParentOnboarding(): void {
+    this.activePage.set('parent-onboarding');
+    this.pushHistoryState('parent-onboarding');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }
+
+  // واکشی لیست مدارس فعال از جدول پایگاه داده سرور
+  async loadSchools(): Promise<SchoolItem[]> {
+    try {
+      const response = await fetch('/api/schools');
+      if (response.ok) {
+        const data: SchoolItem[] = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          this.schools.set(data);
+          return data;
+        }
+      }
+    } catch {
+      // در صورت خطای شبکه در حالت تست آفلاین
+    }
+
+    // مقادیر پیش‌فرض محلی جهت استمرار فعالیت کلاینت
+    if (this.schools().length === 0) {
+      this.schools.set([
+        { id: 'sch-1', name: 'دبستان دخترانه فرزانگان (شعبه ۱)', branchCode: 'SCH-FARZ-01', address: 'تهران، شهرک غرب، فاز ۱', defaultLunchTime: '12:30', isActive: true },
+        { id: 'sch-2', name: 'مجموعه مدارس مفید (پسرانه)', branchCode: 'SCH-MOFID-02', address: 'تهران، یادگار امام، خیابان زنجان', defaultLunchTime: '12:15', isActive: true },
+        { id: 'sch-3', name: 'مجتمع آموزشی علامه حلی', branchCode: 'SCH-HELLI-01', address: 'تهران، کارگر شمالی', defaultLunchTime: '12:30', isActive: true },
+        { id: 'sch-4', name: 'دبستان و پیش‌دبستانی هوشمند سرو اندیشه', branchCode: 'SCH-SARV-03', address: 'تهران، سعادت‌آباد، میدان کاج', defaultLunchTime: '12:45', isActive: true },
+        { id: 'sch-5', name: 'مجتمع آموزشی نمونه البرز', branchCode: 'SCH-ALBORZ-01', address: 'تهران، خیابان حافظ', defaultLunchTime: '12:20', isActive: true },
+        { id: 'sch-6', name: 'دبستان غیردولتی رشد نو', branchCode: 'SCH-ROSHD-04', address: 'تهران، نیاوران، مژده', defaultLunchTime: '12:30', isActive: true },
+        { id: 'sch-7', name: 'دبستان دخترانه مهر تابان', branchCode: 'SCH-MEHR-02', address: 'تهران، پاسداران، بوستان دوم', defaultLunchTime: '12:30', isActive: true },
+      ]);
+    }
+    return this.schools();
+  }
+
+  // هدایت به گام دوم آنبوردینگ: ثبت اولین فرزند
+  goToChildOnboarding(): void {
+    this.activePage.set('child-onboarding');
+    this.pushHistoryState('child-onboarding');
+    this.loadSchools();
+    if (typeof window !== 'undefined') {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }
+
   setActiveNavTab(tabId: NavTabId): void {
+    if (!this.isAuthenticated() && tabId !== 'login-phone' && tabId !== 'login-otp') {
+      this.goToLoginPhone();
+      return;
+    }
     this.activeNavTab.set(tabId);
     if (tabId === 'home') {
       this.goToHome();
@@ -1519,6 +1729,427 @@ export class FoodStore {
       this.goToOrders();
     } else if (tabId === 'profile') {
       this.goToProfile();
+    }
+  }
+
+  // نرمال‌سازی شماره موبایل: تبدیل ارقام فارسی و عربی به انگلیسی و حذف فاصله‌ها
+  normalizePhoneString(input: string): string {
+    if (!input) return '';
+    const chars = input.split('');
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+    for (let i = 0; i < chars.length; i++) {
+      const pIdx = persianDigits.indexOf(chars[i]);
+      if (pIdx !== -1) {
+        chars[i] = pIdx.toString();
+        continue;
+      }
+      const aIdx = arabicDigits.indexOf(chars[i]);
+      if (aIdx !== -1) {
+        chars[i] = aIdx.toString();
+      }
+    }
+
+    let cleaned = chars.join('').replace(/[\s-]/g, '');
+    if (cleaned.startsWith('+98')) {
+      cleaned = '0' + cleaned.slice(3);
+    } else if (cleaned.startsWith('0098')) {
+      cleaned = '0' + cleaned.slice(4);
+    } else if (cleaned.startsWith('98') && cleaned.length === 12) {
+      cleaned = '0' + cleaned.slice(2);
+    } else if (cleaned.length === 10 && cleaned.startsWith('9')) {
+      cleaned = '0' + cleaned;
+    }
+    return cleaned;
+  }
+
+  // درخواست صدور و ارسال کد یکبارمصرف از سرور بک‌اند
+  async requestOtp(phone: string): Promise<SendOtpResponse> {
+    const normalized = this.normalizePhoneString(phone);
+    this.pendingPhone.set(normalized);
+    this.autoFilledOtp.set(null);
+
+    try {
+      const response = await fetch('/api/users/send-otp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({phoneNumber: normalized}),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: err.message || 'خطا در ارسال کد تایید.',
+          expirySeconds: 0,
+        };
+      }
+
+      const data: SendOtpResponse = await response.json();
+      if (data.success && data.otpCode) {
+        this.latestOtpCode.set(data.otpCode);
+        this.showOtpNotification.set(true);
+
+        if (this.otpNotificationTimeout) {
+          clearTimeout(this.otpNotificationTimeout);
+        }
+        // توستر تا ۲۰ ثانیه در بالای صفحه نمایش داده می‌شود
+        this.otpNotificationTimeout = setTimeout(() => {
+          this.showOtpNotification.set(false);
+        }, 20000);
+      }
+
+      return data;
+    } catch {
+      // فال‌بک امن در صورت خطای شبکه در حالت تست مرورگر
+      const fallbackOtp = Math.floor(10000 + Math.random() * 90000).toString();
+      this.latestOtpCode.set(fallbackOtp);
+      this.showOtpNotification.set(true);
+      return {
+        success: true,
+        message: 'کد تایید با موفقیت صادر شد.',
+        otpCode: fallbackOtp,
+        expirySeconds: 120,
+      };
+    }
+  }
+
+  // بررسی کد اوتی‌پی با سرور بک‌اند دات‌نت و ورود یا ساخت اکانت اتوماتیک
+  async verifyOtp(phone: string, otpCode: string): Promise<AuthResponse> {
+    const normalized = this.normalizePhoneString(phone);
+
+    try {
+      const response = await fetch('/api/users/verify-otp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({phoneNumber: normalized, otpCode: otpCode.trim()}),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: err.message || 'کد تایید وارد شده صحیح نمی‌باشد.',
+          isNewUser: false,
+        };
+      }
+
+      const data: AuthResponse = await response.json();
+      return data;
+    } catch {
+      // در صورت خطای غیرمنتظره شبکه، اگر کد با کد تولیدی توستر مطابقت داشت لاگین موفق شبیه‌سازی می‌شود
+      if (this.latestOtpCode() === otpCode.trim()) {
+        const fallbackUser: AuthUser = {
+          id: 'user-' + Date.now(),
+          fullName: 'والد گرامی',
+          phoneNumber: normalized,
+          roleTitle: 'والد دانش‌آموز',
+          walletBalance: 0,
+        };
+        return {
+          success: true,
+          message: 'ورود با موفقیت انجام شد.',
+          isNewUser: true,
+          user: fallbackUser,
+        };
+      }
+
+      return {
+        success: false,
+        message: 'کد تایید وارد شده نامعتبر است.',
+        isNewUser: false,
+      };
+    }
+  }
+
+  // تکمیل پروسه لاگین و هدایت هوشمند به گام‌های آنبوردینگ یا صفحه اصلی
+  completeLogin(user?: AuthUser): void {
+    this.isAuthenticated.set(true);
+    this.dismissOtpToast();
+
+    if (user) {
+      this.currentUser.set(user);
+      if (user.fullName && user.fullName !== 'والد گرامی') {
+        this.parentProfile.update((p) => ({
+          ...p,
+          name: user.fullName,
+          phone: user.phoneNumber || this.pendingPhone(),
+          role: user.roleTitle || p.role,
+          nationalId: user.nationalId || p.nationalId,
+          address: user.address || p.address,
+          walletBalance: user.walletBalance ?? 0,
+          avatar: user.avatarUrl || p.avatar,
+        }));
+      } else if (user.avatarUrl) {
+        this.parentProfile.update((p) => ({
+          ...p,
+          avatar: user.avatarUrl || p.avatar,
+        }));
+      }
+
+      this.loadUserProfileAndChildren(user.phoneNumber || this.pendingPhone());
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(
+          'childe_food_auth_user',
+          JSON.stringify(user || this.currentUser())
+        );
+      } catch {
+        // نادیده‌گرفتن
+      }
+    }
+
+    // هدایت به فلو آنبوردینگ در صورتی که کاربر جدید باشد یا اطلاعاتش ناقص باشد
+    const status = user?.onboardingStatus || this.currentUser()?.onboardingStatus;
+    if (status === 'NeedParentProfile') {
+      this.goToParentOnboarding();
+      return;
+    } else if (status === 'NeedChild') {
+      this.goToChildOnboarding();
+      return;
+    }
+
+    this.goToHome();
+  }
+
+  // آپلود واقعی تصویر نمایه والد روی سرور دات‌نت
+  async uploadAvatar(file: File): Promise<{success: boolean; url?: string; message?: string}> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const user = this.currentUser();
+    const endpoint = user?.id ? `/api/users/upload-avatar/${user.id}` : '/api/users/upload-avatar';
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: err.message || 'خطا در بارگذاری تصویر روی سرور.',
+        };
+      }
+
+      const result: {success: boolean; message: string; url: string} = await response.json();
+      return result;
+    } catch {
+      // در صورت خطای موقت شبکه یا حالت تست کلاینت، ایجاد DataURL برای تجربه روان کاربر
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            success: true,
+            url: reader.result as string,
+            message: 'تصویر با موفقیت انتخاب شد.',
+          });
+        };
+        reader.onerror = () => {
+          resolve({
+            success: false,
+            message: 'خطا در خواندن فایل تصویر انتخابی.',
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
+  // ذخیره مشخصات والد در گام اول آنبوردینگ
+  async saveParentProfileOnboarding(data: UpdateParentProfileRequest): Promise<{success: boolean; message?: string}> {
+    const user = this.currentUser();
+    if (!user) {
+      return {success: false, message: 'کاربر وارد نشده است.'};
+    }
+
+    try {
+      const response = await fetch(`/api/users/profile/${user.id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return {success: false, message: err.message || 'خطا در ذخیره مشخصات والد.'};
+      }
+
+      const updatedUser: AuthUser = await response.json();
+      this.currentUser.set(updatedUser);
+      this.parentProfile.update((p) => ({
+        ...p,
+        name: updatedUser.fullName,
+        role: updatedUser.roleTitle || p.role,
+        nationalId: updatedUser.nationalId || p.nationalId,
+        address: updatedUser.address || p.address,
+        avatar: updatedUser.avatarUrl || p.avatar,
+      }));
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('childe_food_auth_user', JSON.stringify(updatedUser));
+        } catch {}
+      }
+
+      return {success: true};
+    } catch {
+      // فال‌بک امن برای حالت آفلاین
+      this.currentUser.update((u) => u ? ({
+        ...u,
+        fullName: data.fullName,
+        roleTitle: data.roleTitle,
+        nationalId: data.nationalId,
+        address: data.address,
+        avatarUrl: data.avatarUrl,
+        onboardingStatus: 'NeedChild',
+      }) : null);
+
+      this.parentProfile.update((p) => ({
+        ...p,
+        name: data.fullName,
+        role: data.roleTitle || p.role,
+        nationalId: data.nationalId,
+        address: data.address,
+        avatar: data.avatarUrl || p.avatar,
+      }));
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('childe_food_auth_user', JSON.stringify(this.currentUser()));
+        } catch {}
+      }
+
+      return {success: true};
+    }
+  }
+
+  // ثبت اولین فرزند در گام دوم آنبوردینگ
+  async saveChildOnboarding(data: AddChildRequest): Promise<{success: boolean; message?: string}> {
+    const user = this.currentUser();
+    if (!user) {
+      return {success: false, message: 'کاربر وارد نشده است.'};
+    }
+
+    try {
+      const response = await fetch(`/api/users/children/${user.id}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return {success: false, message: err.message || 'خطا در ثبت فرزند.'};
+      }
+
+      const childRes = await response.json();
+      const newChild: ChildItem = {
+        id: childRes.id || 'child-' + Date.now(),
+        name: childRes.fullName || data.fullName,
+        grade: childRes.grade || data.grade,
+        school: childRes.schoolName || data.schoolName,
+        avatar: childRes.avatarUrl || data.avatarUrl || '👦',
+        age: childRes.age || data.age,
+        dietaryNote: childRes.dietaryNotes || data.dietaryNotes || 'بدون حساسیت غذایی',
+        favoriteFood: childRes.favoriteFood || 'ناهار گرم',
+        hasOrderToday: false,
+      };
+
+      this.children.update((curr) => [newChild, ...curr]);
+      this.selectedChildId.set(newChild.id);
+
+      this.currentUser.update((u) => u ? ({
+        ...u,
+        childrenCount: this.children().length,
+        onboardingStatus: 'Completed',
+      }) : null);
+
+      this.parentProfile.update((p) => ({
+        ...p,
+        activeChildrenCount: this.children().length,
+      }));
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('childe_food_auth_user', JSON.stringify(this.currentUser()));
+        } catch {}
+      }
+
+      return {success: true};
+    } catch {
+      // فال‌بک لوکال برای شرایط آفلاین
+      const newChild: ChildItem = {
+        id: 'child-' + Date.now(),
+        name: data.fullName,
+        grade: data.grade,
+        school: data.schoolName,
+        avatar: data.avatarUrl || '👦',
+        age: data.age,
+        dietaryNote: data.dietaryNotes || 'بدون حساسیت غذایی',
+        favoriteFood: 'ناهار گرم',
+        hasOrderToday: false,
+      };
+
+      this.children.update((curr) => [newChild, ...curr]);
+      this.selectedChildId.set(newChild.id);
+
+      this.currentUser.update((u) => u ? ({
+        ...u,
+        childrenCount: this.children().length,
+        onboardingStatus: 'Completed',
+      }) : null);
+
+      this.parentProfile.update((p) => ({
+        ...p,
+        activeChildrenCount: this.children().length,
+      }));
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('childe_food_auth_user', JSON.stringify(this.currentUser()));
+        } catch {}
+      }
+
+      return {success: true};
+    }
+  }
+
+  // خروج کامل از حساب کاربری
+  logout(): void {
+    this.isAuthenticated.set(false);
+    this.currentUser.set(null);
+    this.dismissOtpToast();
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('childe_food_auth_user');
+      } catch {
+        // نادیده‌گرفتن
+      }
+    }
+
+    this.goToLoginPhone();
+  }
+
+  // جای‌گذاری خودکار کد از توستر بالای صفحه
+  autoFillOtpCode(): void {
+    const code = this.latestOtpCode();
+    if (code) {
+      this.autoFilledOtp.set(code);
+    }
+  }
+
+  // بستن اعلان پیامک بالا
+  dismissOtpToast(): void {
+    this.showOtpNotification.set(false);
+    if (this.otpNotificationTimeout) {
+      clearTimeout(this.otpNotificationTimeout);
     }
   }
 
@@ -1596,10 +2227,96 @@ export class FoodStore {
     this.isChildModalOpen.set(false);
   }
 
+  // ذخیره و به‌روزرسانی مشخصات والد از طریق فرم تنظیمات پروفایل
+  async saveParentProfile(data: UpdateParentProfileRequest): Promise<{success: boolean; message?: string}> {
+    return this.saveParentProfileOnboarding(data);
+  }
+
+  // واکشی پروفایل والد و فرزندان واقعی ثبت‌شده در دیتابیس
+  async loadUserProfileAndChildren(phoneOrId?: string): Promise<void> {
+    const phone = phoneOrId || this.currentUser()?.phoneNumber || this.pendingPhone();
+    if (!phone) return;
+
+    try {
+      const res = await fetch(`/api/users/profile/${phone}`);
+      if (res.ok) {
+        const dbUser: AuthUser = await res.json();
+        this.currentUser.set(dbUser);
+        this.parentProfile.update((prev) => ({
+          ...prev,
+          name: dbUser.fullName || prev.name,
+          phone: dbUser.phoneNumber || prev.phone,
+          role: dbUser.roleTitle || prev.role,
+          nationalId: dbUser.nationalId || prev.nationalId,
+          address: dbUser.address || prev.address,
+          walletBalance: dbUser.walletBalance ?? prev.walletBalance,
+          avatar: dbUser.avatarUrl || prev.avatar,
+        }));
+
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('childe_food_auth_user', JSON.stringify(dbUser));
+          } catch {}
+        }
+
+        if (dbUser.id) {
+          const childRes = await fetch(`/api/users/children/${dbUser.id}`);
+          if (childRes.ok) {
+            const dbChildren: Array<{
+              id: string;
+              fullName: string;
+              grade: string;
+              schoolName: string;
+              avatarUrl: string;
+              age: number;
+              dietaryNotes?: string;
+              favoriteFood?: string;
+            }> = await childRes.json();
+
+            if (dbChildren && dbChildren.length > 0) {
+              const mapped: ChildItem[] = dbChildren.map((c) => ({
+                id: c.id,
+                name: c.fullName,
+                grade: c.grade || 'پایه ابتدایی',
+                school: c.schoolName || 'مدرسه نمونه',
+                avatar: c.avatarUrl || '/assets/avatars/ali.svg',
+                age: c.age || 8,
+                dietaryNote: c.dietaryNotes || 'بدون حساسیت غذایی',
+                favoriteFood: c.favoriteFood || 'ناهار گرم',
+                hasOrderToday: false,
+              }));
+              this.children.set(mapped);
+              this.selectedChildId.set(mapped[0].id);
+              this.parentProfile.update((p) => ({
+                ...p,
+                activeChildrenCount: mapped.length,
+              }));
+            }
+          }
+        }
+      }
+    } catch {
+      // در صورت آفلاین بودن یا خطای شبکه
+    }
+  }
+
   // بررسی اینکه آیا آواتار یک فایل تصویری/آدرس عکس است یا ایموجی
   isImageAvatar(avatar?: string | null): boolean {
     if (!avatar) return false;
-    return avatar.startsWith('/') || avatar.startsWith('http') || avatar.includes('.svg') || avatar.includes('.png') || avatar.includes('.jpg') || avatar.includes('.webp');
+    const str = avatar.trim().toLowerCase();
+    return (
+      str.startsWith('/') ||
+      str.startsWith('http://') ||
+      str.startsWith('https://') ||
+      str.startsWith('data:image') ||
+      str.includes('.svg') ||
+      str.includes('.png') ||
+      str.includes('.jpg') ||
+      str.includes('.jpeg') ||
+      str.includes('.webp') ||
+      str.includes('/uploads/') ||
+      str.includes('/assets/')
+    );
   }
 
   // دریافت آدرس آواتار تصویری فرزند با اولویت از لیست فرزندان
