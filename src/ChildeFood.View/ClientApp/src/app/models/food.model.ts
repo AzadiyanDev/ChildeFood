@@ -160,7 +160,23 @@ export interface WalletSummaryResponse {
   lastTransactionTitle?: string | null;
   lastTransactionDate?: string | null;
   monthOrdersCount: number;
+  totalDeposits?: number;
+  totalOrdersAmount?: number;
+  totalDiscountAmount?: number;
 }
+
+// مدل نتیجه تراکنش‌های صفحه‌بندی شده برای اینفینیتی اسکرول
+export interface PagedTransactionsResponse {
+  items: WalletTransaction[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasMore: boolean;
+  depositSum: number;
+  purchaseSum: number;
+}
+
 
 // مدل سفارش امروز دریافتی مستقیم از دیتابیس
 export interface TodayOrderResponse {

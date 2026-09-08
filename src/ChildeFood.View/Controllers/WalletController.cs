@@ -45,4 +45,36 @@ public class WalletController : ControllerBase
 
         return Ok(new { success = true, message = "کیف پول با موفقیت شارژ شد." });
     }
+
+    // واکشی ۵ تراکنش اخیر کاربر با شناسه والد برای کارت تراکنش‌های اخیر
+    [HttpGet("transactions/recent/{parentId:guid}")]
+    public async Task<ActionResult<IReadOnlyList<WalletTransactionDto>>> GetRecentTransactions(Guid parentId, [FromQuery] int count = 5, CancellationToken cancellationToken = default)
+    {
+        var list = await _walletService.GetRecentTransactionsAsync(parentId, count, null, cancellationToken);
+        return Ok(list);
+    }
+
+    // واکشی ۵ تراکنش اخیر کاربر با شماره تلفن همراه
+    [HttpGet("transactions/recent-by-phone/{phone}")]
+    public async Task<ActionResult<IReadOnlyList<WalletTransactionDto>>> GetRecentTransactionsByPhone(string phone, [FromQuery] int count = 5, CancellationToken cancellationToken = default)
+    {
+        var list = await _walletService.GetRecentTransactionsAsync(Guid.Empty, count, phone, cancellationToken);
+        return Ok(list);
+    }
+
+    // واکشی تراکنش‌ها به‌صورت صفحه‌بندی شده برای اسکرول نامحدود با شناسه والد
+    [HttpGet("transactions/paged/{parentId:guid}")]
+    public async Task<ActionResult<PagedTransactionsDto>> GetPagedTransactions(Guid parentId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? type = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _walletService.GetTransactionsPagedAsync(parentId, page, pageSize, type, null, cancellationToken);
+        return Ok(result);
+    }
+
+    // واکشی تراکنش‌ها به‌صورت صفحه‌بندی شده با کوئری استرینگ (برای پشتیبانی از تلفن همراه یا والت پیش‌فرض)
+    [HttpGet("transactions/paged")]
+    public async Task<ActionResult<PagedTransactionsDto>> GetPagedTransactionsQuery([FromQuery] Guid? parentId, [FromQuery] string? phone, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? type = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _walletService.GetTransactionsPagedAsync(parentId ?? Guid.Empty, page, pageSize, type, phone, cancellationToken);
+        return Ok(result);
+    }
 }

@@ -13,4 +13,14 @@ public interface IWalletService
 
     // شارژ آنلاین کیف پول
     Task<bool> ChargeWalletAsync(Guid parentId, decimal amount, string? trackingCode = null, CancellationToken cancellationToken = default);
+
+    // واکشی ۵ تراکنش اخیر والد برای صفحه اصلی کیف پول
+    Task<IReadOnlyList<WalletTransactionDto>> GetRecentTransactionsAsync(Guid parentId, int count = 5, string? phone = null, CancellationToken cancellationToken = default);
+
+    // واکشی تراکنش‌های والد به‌صورت صفحه‌بندی شده همراه با فیلتر (همه / واریز / خرید) برای اینفینیتی اسکرول
+    Task<PagedTransactionsDto> GetTransactionsPagedAsync(Guid parentId, int pageNumber = 1, int pageSize = 10, string? typeFilter = null, string? phone = null, CancellationToken cancellationToken = default);
+
+    // اطمینان از وجود داده‌های نمونه تراکنش برای تست تمیز و واقعی در دیتابیس
+    Task EnsureSampleTransactionsAsync(Guid parentId, CancellationToken cancellationToken = default);
 }
+

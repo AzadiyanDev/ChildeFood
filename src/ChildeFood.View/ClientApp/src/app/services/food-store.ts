@@ -1,5 +1,6 @@
 import {Injectable, computed, signal} from '@angular/core';
-import {AddChildRequest, AuthResponse, AuthUser, CategoryItem, ChildItem, DateDayItem, FoodItem, FoodRecommendationResponse, NavTabId, OrderDetailResponse, OrderItemDetail, OrderSummaryItem, PagedOrdersResponse, ParentProfile, SchoolItem, SchoolOrder, SendOtpResponse, TodayOrderResponse, UpdateParentProfileRequest, WalletSummaryResponse, WalletTransaction} from '../models/food.model';
+import {AddChildRequest, AuthResponse, AuthUser, CategoryItem, ChildItem, DateDayItem, FoodItem, FoodRecommendationResponse, NavTabId, OrderDetailResponse, OrderItemDetail, OrderSummaryItem, PagedOrdersResponse, PagedTransactionsResponse, ParentProfile, SchoolItem, SchoolOrder, SendOtpResponse, TodayOrderResponse, UpdateParentProfileRequest, WalletSummaryResponse, WalletTransaction} from '../models/food.model';
+
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +18,10 @@ export class FoodStore {
 
   // سیگنال داده‌های خلاصه کیف پول، آخرین تراکنش و سفارش‌های ماه از دیتابیس
   readonly walletSummary = signal<WalletSummaryResponse | null>(null);
+
+  // سیگنال ۵ تراکنش اخیر واکشی‌شده ریل‌تایم از دیتابیس
+  readonly recentWalletTransactions = signal<WalletTransaction[]>([]);
+
 
   // سیگنال پیشنهاد غذای امروز (محبوب‌ترین منوی روزانه)
   readonly dailyRecommendation = signal<FoodRecommendationResponse | null>({
@@ -2423,6 +2428,68 @@ export class FoodStore {
       // در صورت خطای شبکه یا حالت آفلاین
     }
   }
+
+  // واکشی ۵ تراکنش اخیر والد به صورت ریل‌تایم از دیتابیس
+  async loadRecentTransactions(parentIdOrPhone?: string): Promise<void> {
+    const user = this.currentUser();
+    const id = parentIdOrPhone || user?.id;
+    const phone = !id && user?.phoneNumber ? user.phoneNumber : null;
+
+    try {
+      let res: Response | null = null;
+      if (id) {
+        res = await fetch(`/api/wallet/transactions/recent/${id}?count=5`);
+      } else if (phone) {
+        res = await fetch(`/api/wallet/transactions/recent-by-phone/${phone}?count=5`);
+      } else {
+        res = await fetch(`/api/wallet/transactions/paged?page=1&pageSize=5`);
+      }
+
+      if (res && res.ok) {
+        const data = await res.json();
+        const items = Array.isArray(data) ? data : (data.items || []);
+        if (items.length > 0) {
+          this.recentWalletTransactions.set(items);
+          this.walletTransactions.set(items);
+        }
+      }
+    } catch {
+      // در صورت خطای شبکه
+    }
+  }
+
+  // واکشی صفحه‌بندی شده تراکنش‌ها از سرور برای اسکرول نامحدود
+  async fetchPagedTransactions(
+    page: number = 1,
+    pageSize: number = 10,
+    typeFilter: string = 'all',
+    parentIdOrPhone?: string
+  ): Promise<PagedTransactionsResponse | null> {
+    const user = this.currentUser();
+    const id = parentIdOrPhone || user?.id;
+    const phone = !id && user?.phoneNumber ? user.phoneNumber : null;
+
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        type: typeFilter,
+      });
+
+      if (id) params.append('parentId', id);
+      if (phone) params.append('phone', phone);
+
+      const res = await fetch(`/api/wallet/transactions/paged?${params.toString()}`);
+      if (res.ok) {
+        return (await res.json()) as PagedTransactionsResponse;
+      }
+    } catch {
+      // خطا در ارتباط شبکه
+    }
+
+    return null;
+  }
+
 
   // واکشی سفارش‌های امروز برای صفحه اصلی به صورت ریل‌تایم از دیتابیس
   async loadTodayOrders(parentIdOrPhone?: string): Promise<void> {
