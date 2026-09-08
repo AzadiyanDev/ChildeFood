@@ -36,7 +36,15 @@ public class OrdersController : ControllerBase
     [HttpGet("my-orders/{parentId:guid}")]
     public async Task<ActionResult<PagedOrdersDto>> GetMyOrders(Guid parentId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, CancellationToken cancellationToken = default)
     {
-        var result = await _orderService.GetParentOrdersPagedAsync(parentId, page, pageSize, status, cancellationToken);
+        var result = await _orderService.GetParentOrdersPagedAsync(parentId, page, pageSize, status, null, cancellationToken);
+        return Ok(result);
+    }
+
+    // واکشی سفارش‌های شخصی کاربر جاری با روت عمومی و پارامترهای کوئری
+    [HttpGet("my-orders")]
+    public async Task<ActionResult<PagedOrdersDto>> GetMyOrdersQuery([FromQuery] Guid? parentId, [FromQuery] string? phone, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _orderService.GetParentOrdersPagedAsync(parentId ?? Guid.Empty, page, pageSize, status, phone, cancellationToken);
         return Ok(result);
     }
 

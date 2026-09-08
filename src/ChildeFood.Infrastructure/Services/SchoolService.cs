@@ -176,10 +176,18 @@ public class SchoolService : ISchoolService
 
         foreach (var school in defaultSchools)
         {
-            var exists = await _dbContext.Schools.AnyAsync(s => s.Name == school.Name || s.BranchCode == school.BranchCode, cancellationToken);
-            if (!exists)
+            var existing = await _dbContext.Schools.FirstOrDefaultAsync(s => s.BranchCode == school.BranchCode, cancellationToken);
+            if (existing is null)
             {
                 await _dbContext.Schools.AddAsync(school, cancellationToken);
+            }
+            else if (existing.Name.Contains("?") || existing.Address.Contains("?"))
+            {
+                // اینجا اگر دیتای قبلی به خاطر انکودینگ کاراکتر خراب و علامت سوالی داشت، تصحیحش می‌کنیم
+                existing.Name = school.Name;
+                existing.Address = school.Address;
+                existing.DefaultLunchTime = school.DefaultLunchTime;
+                existing.IsActive = true;
             }
         }
 

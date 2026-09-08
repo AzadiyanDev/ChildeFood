@@ -14,13 +14,16 @@ public class OrderService : IOrderService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IFoodService _foodService;
 
     public OrderService(
         ApplicationDbContext dbContext,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        IFoodService foodService)
     {
         _dbContext = dbContext;
         _userManager = userManager;
+        _foodService = foodService;
     }
 
     // واکشی لیست سفارش‌های امروز یک والد به همراه کلیه جزئیات غذا، فرزند و مدرسه
@@ -100,8 +103,28 @@ public class OrderService : IOrderService
     }
 
     // واکشی سفارش‌های شخصی والد لاگین‌شده با صفحه‌بندی ۱۰ تا ۱۰ تا جهت پرفورمنس بالا و اسکرول نرم
-    public async Task<PagedOrdersDto> GetParentOrdersPagedAsync(Guid parentId, int pageNumber = 1, int pageSize = 10, string? statusFilter = null, CancellationToken cancellationToken = default)
+    public async Task<PagedOrdersDto> GetParentOrdersPagedAsync(Guid parentId, int pageNumber = 1, int pageSize = 10, string? statusFilter = null, string? phone = null, CancellationToken cancellationToken = default)
     {
+        // در صورتی که شناسه والد خالی باشد یا ارسال نشده باشد، با شماره همراه یا کاربر پیش‌فرض شناسه را پیدا می‌کنیم
+        if (parentId == Guid.Empty && !string.IsNullOrWhiteSpace(phone))
+        {
+            var normalized = phone.Trim().Replace(" ", "");
+            var userByPhone = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == normalized || u.UserName == normalized, cancellationToken);
+            if (userByPhone != null)
+            {
+                parentId = userByPhone.Id;
+            }
+        }
+
+        if (parentId == Guid.Empty)
+        {
+            var defaultUser = await _userManager.Users.FirstOrDefaultAsync(cancellationToken);
+            if (defaultUser != null)
+            {
+                parentId = defaultUser.Id;
+            }
+        }
+
         // اطمینان از وجود داده‌های کافی برای تست لذت‌بخش اسکرول و صفحه‌بندی
         await EnsureSampleOrdersAsync(parentId, cancellationToken);
 
@@ -295,44 +318,69 @@ public class OrderService : IOrderService
     // متد کمکی جهت ایجاد سفارش‌های نمونه متنوع برای والد جهت تست واقعی اسکرول و صفحه‌بندی
     public async Task EnsureSampleOrdersAsync(Guid parentId, CancellationToken cancellationToken = default)
     {
+        if (parentId == Guid.Empty)
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(cancellationToken);
+            if (user == null) return;
+            parentId = user.Id;
+        }
+
+        // ۱. پاکسازی هرگونه سفارش خالی یا خراب علامت‌سوالی قدیمی در صورت وجود
+        var corruptedOrders = await _dbContext.SchoolOrders
+            .Include(o => o.OrderItems)
+            .Where(o => o.ParentId == parentId && (!o.OrderItems.Any() || o.OrderItems.Any(oi => oi.FoodTitle.Contains("?") || (oi.FoodItem != null && oi.FoodItem.Title.Contains("?")))))
+            .ToListAsync(cancellationToken);
+
+        if (corruptedOrders.Count > 0)
+        {
+            _dbContext.SchoolOrders.RemoveRange(corruptedOrders);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        // ۲. شمارش سفارش‌های معتبر موجود برای این والد
         var existingCount = await _dbContext.SchoolOrders
             .Where(o => o.ParentId == parentId)
             .CountAsync(cancellationToken);
 
         if (existingCount >= 15) return;
 
-        // ابتدا فرزندان والد را پیدا می‌کنیم
+        // ۳. بررسی و اصلاح اطلاعات مدرسه و فرزندان والد
+        var school = await _dbContext.Schools.FirstOrDefaultAsync(s => s.BranchCode == "SCH-FARZ-01" || s.IsActive, cancellationToken);
+        if (school == null)
+        {
+            school = new School
+            {
+                Id = Guid.NewGuid(),
+                Name = "دبستان دخترانه فرزانگان (شعبه ۱)",
+                BranchCode = "SCH-FARZ-01",
+                Address = "تهران، شهرک غرب، فاز ۱، خیابان ایران‌زمین",
+                DefaultLunchTime = "12:30",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _dbContext.Schools.AddAsync(school, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else if (school.Name.Contains("?"))
+        {
+            school.Name = "دبستان دخترانه فرزانگان (شعبه ۱)";
+            school.Address = "تهران، شهرک غرب، فاز ۱، خیابان ایران‌زمین";
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         var children = await _dbContext.Children
             .Include(c => c.School)
             .Where(c => c.ParentId == parentId)
             .ToListAsync(cancellationToken);
 
-        // اگر فرزندی نبود فرزند نمونه می‌سازیم
         if (children.Count == 0)
         {
-            var defaultSchool = await _dbContext.Schools.FirstOrDefaultAsync(cancellationToken);
-            if (defaultSchool == null)
-            {
-                defaultSchool = new School
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "مدرسه نمونه",
-                    BranchCode = "SCH-01",
-                    Address = "تهران",
-                    DefaultLunchTime = "12:30",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _dbContext.Schools.AddAsync(defaultSchool, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-
             var child1 = new Child
             {
                 Id = Guid.NewGuid(),
                 ParentId = parentId,
                 FullName = "علی احمدی",
-                SchoolId = defaultSchool.Id,
+                SchoolId = school.Id,
                 Grade = "کلاس پنجم",
                 Age = 11,
                 AvatarUrl = "/assets/avatars/ali.svg",
@@ -344,8 +392,8 @@ public class OrderService : IOrderService
                 Id = Guid.NewGuid(),
                 ParentId = parentId,
                 FullName = "آوا احمدی",
-                SchoolId = defaultSchool.Id,
-                Grade = "کلاس ۲۰۴",
+                SchoolId = school.Id,
+                Grade = "پایه دوم ابتدایی",
                 Age = 8,
                 AvatarUrl = "/assets/avatars/ava.svg",
                 DietaryNotes = "رژیم بدون بادام زمینی",
@@ -356,39 +404,119 @@ public class OrderService : IOrderService
             await _dbContext.Children.AddRangeAsync(children, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
-
-        // بررسی وجود غذاها
-        var foods = await _dbContext.FoodItems.ToListAsync(cancellationToken);
-        if (foods.Count == 0)
+        else
         {
-            var f1 = new FoodItem { Id = Guid.NewGuid(), Title = "چلو جوجه کباب زعفرانی", Subtitle = "همراه با برنج درجه یک", Price = 185000, Emoji = "🍗", IsAvailable = true };
-            var f2 = new FoodItem { Id = Guid.NewGuid(), Title = "ماکارونی", Subtitle = "با گوشت گرم چرخ‌کرده", Price = 160000, Emoji = "🍝", IsAvailable = true };
-            var f3 = new FoodItem { Id = Guid.NewGuid(), Title = "قورمه سبزی اصیل", Subtitle = "با گوشت تازه گوسفندی", Price = 195000, Emoji = "🥘", IsAvailable = true };
-            var f4 = new FoodItem { Id = Guid.NewGuid(), Title = "چلو کباب کوبیده سنتی ممتاز", Subtitle = "دو سیخ کوبیده زعفرانی", Price = 195000, Emoji = "🥩", IsAvailable = true };
-            var f5 = new FoodItem { Id = Guid.NewGuid(), Title = "پاستا آلفردو با فیله مرغ", Subtitle = "همراه با سس مخصوص و قارچ", Price = 160000, Emoji = "🍲", IsAvailable = true };
-            var f6 = new FoodItem { Id = Guid.NewGuid(), Title = "فیله مرغ بخارپز و سبزیجات", Subtitle = "رژیمی و سالم", Price = 135000, Emoji = "🥗", IsAvailable = true };
-            var f7 = new FoodItem { Id = Guid.NewGuid(), Title = "استانبولی پلو با ماست چکیده", Subtitle = "غذای محبوب سنتی", Price = 140000, Emoji = "🍛", IsAvailable = true };
-
-            foods.AddRange(new[] { f1, f2, f3, f4, f5, f6, f7 });
-            await _dbContext.FoodItems.AddRangeAsync(foods, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var modified = false;
+            for (int ci = 0; ci < children.Count; ci++)
+            {
+                var ch = children[ci];
+                if (ch.FullName.Contains("?") || (ch.Grade != null && ch.Grade.Contains("?")))
+                {
+                    ch.FullName = ci == 0 ? "علی احمدی" : "آوا احمدی";
+                    ch.Grade = ci == 0 ? "کلاس پنجم" : "پایه دوم ابتدایی";
+                    ch.AvatarUrl = ci == 0 ? "/assets/avatars/ali.svg" : "/assets/avatars/ava.svg";
+                    ch.SchoolId = school.Id;
+                    modified = true;
+                }
+            }
+            if (modified) await _dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        // ۴. اطمینان از وجود ۳۴ غذای واقعی در جدول غذاها
+        var foods = await _dbContext.FoodItems
+            .Where(f => !f.Title.Contains("?") && f.Category == FoodCategory.Main)
+            .ToListAsync(cancellationToken);
+
+        if (foods.Count < 5)
+        {
+            await _foodService.SeedComprehensiveFoodCatalogAsync(cancellationToken);
+            foods = await _dbContext.FoodItems
+                .Where(f => !f.Title.Contains("?") && f.Category == FoodCategory.Main)
+                .ToListAsync(cancellationToken);
+        }
+
+        if (foods.Count == 0) return;
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3.5));
         var newOrders = new List<SchoolOrder>();
 
-        // ایجاد ۱۸ سفارش با تنوع روزهای مختلف، غذاها و وضعیت‌های فعال و تحویل شده
-        for (int i = 0; i < 18; i++)
+        // ۵. ایجاد ۱۸ سفارش واقعی و تمیز: ۲ تای اول مربوط به امروز (فعال)، ۱۶ تای بعدی روزهای گذشته (تحویل شده)
+        var foodJoojeh = foods.FirstOrDefault(f => f.Title.Contains("جوجه")) ?? foods[0];
+        var foodPizza = foods.FirstOrDefault(f => f.Title.Contains("پیتزا")) ?? (foods.Count > 1 ? foods[1] : foods[0]);
+
+        // سفارش اول امروز: برای علی احمدی
+        var order1 = new SchoolOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-1403-101",
+            ParentId = parentId,
+            ChildId = children[0].Id,
+            ServingDate = today,
+            DeliveryTime = "12:30",
+            TotalRawPrice = foodJoojeh.Price,
+            DiscountAmount = 0,
+            FinalPayablePrice = foodJoojeh.Price,
+            PaymentMethod = PaymentMethod.Wallet,
+            Status = OrderStatus.Preparing,
+            TrackingCode = "984712",
+            CreatedAt = DateTime.UtcNow
+        };
+        order1.OrderItems.Add(new OrderItem
+        {
+            Id = Guid.NewGuid(),
+            OrderId = order1.Id,
+            FoodItemId = foodJoojeh.Id,
+            FoodTitle = foodJoojeh.Title,
+            Portion = PortionType.Full,
+            Quantity = 1,
+            UnitPrice = foodJoojeh.Price,
+            TotalPrice = foodJoojeh.Price,
+            CreatedAt = DateTime.UtcNow
+        });
+        newOrders.Add(order1);
+
+        // سفارش دوم امروز: برای آوا احمدی
+        var order2 = new SchoolOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-1403-102",
+            ParentId = parentId,
+            ChildId = children.Count > 1 ? children[1].Id : children[0].Id,
+            ServingDate = today,
+            DeliveryTime = "12:45",
+            TotalRawPrice = foodPizza.Price,
+            DiscountAmount = 0,
+            FinalPayablePrice = foodPizza.Price,
+            PaymentMethod = PaymentMethod.Wallet,
+            Status = OrderStatus.Preparing,
+            TrackingCode = "984530",
+            CreatedAt = DateTime.UtcNow
+        };
+        order2.OrderItems.Add(new OrderItem
+        {
+            Id = Guid.NewGuid(),
+            OrderId = order2.Id,
+            FoodItemId = foodPizza.Id,
+            FoodTitle = foodPizza.Title,
+            Portion = PortionType.Full,
+            Quantity = 1,
+            UnitPrice = foodPizza.Price,
+            TotalPrice = foodPizza.Price,
+            CreatedAt = DateTime.UtcNow
+        });
+        newOrders.Add(order2);
+
+        // ۱۶ سفارش مربوط به روزهای قبل با غذاها و تاریخ‌های متنوع
+        for (int i = 1; i <= 16; i++)
         {
             var child = children[i % children.Count];
-            var food = foods[i % foods.Count];
-            var servingDate = today.AddDays(-i); // از امروز تا ۱۷ روز گذشته
-            var isDelivered = i >= 2; // ۲ تای اول فعال، بقیه تحویل شده
+            var food = foods[(i + 1) % foods.Count];
+            var servingDate = today.AddDays(-i);
 
-            var order = new SchoolOrder
+            var pastOrder = new SchoolOrder
             {
                 Id = Guid.NewGuid(),
-                OrderCode = $"ORD-{1042 - i}",
+                OrderCode = $"ORD-1403-{102 + i}",
                 ParentId = parentId,
                 ChildId = child.Id,
                 ServingDate = servingDate,
@@ -397,15 +525,15 @@ public class OrderService : IOrderService
                 DiscountAmount = 0,
                 FinalPayablePrice = food.Price,
                 PaymentMethod = PaymentMethod.Wallet,
-                Status = isDelivered ? OrderStatus.Delivered : OrderStatus.Preparing,
-                TrackingCode = $"{984712 - i * 182}",
+                Status = OrderStatus.Delivered,
+                TrackingCode = $"{984000 - i * 143}",
                 CreatedAt = DateTime.UtcNow.AddDays(-i)
             };
 
-            var orderItem = new OrderItem
+            pastOrder.OrderItems.Add(new OrderItem
             {
                 Id = Guid.NewGuid(),
-                OrderId = order.Id,
+                OrderId = pastOrder.Id,
                 FoodItemId = food.Id,
                 FoodTitle = food.Title,
                 Portion = PortionType.Full,
@@ -413,10 +541,9 @@ public class OrderService : IOrderService
                 UnitPrice = food.Price,
                 TotalPrice = food.Price,
                 CreatedAt = DateTime.UtcNow.AddDays(-i)
-            };
+            });
 
-            order.OrderItems.Add(orderItem);
-            newOrders.Add(order);
+            newOrders.Add(pastOrder);
         }
 
         await _dbContext.SchoolOrders.AddRangeAsync(newOrders, cancellationToken);

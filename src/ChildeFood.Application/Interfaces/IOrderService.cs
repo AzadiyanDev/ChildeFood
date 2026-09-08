@@ -12,7 +12,7 @@ public interface IOrderService
     Task<IReadOnlyList<TodayOrderDto>> GetTodayOrdersByPhoneAsync(string phone, DateOnly? date = null, CancellationToken cancellationToken = default);
 
     // دریافت لیست سفارش‌های والد به صورت صفحه‌بندی شده (۱۰ تا ۱۰ تا) با قابلیت اسکرول نامحدود
-    Task<PagedOrdersDto> GetParentOrdersPagedAsync(Guid parentId, int pageNumber = 1, int pageSize = 10, string? statusFilter = null, CancellationToken cancellationToken = default);
+    Task<PagedOrdersDto> GetParentOrdersPagedAsync(Guid parentId, int pageNumber = 1, int pageSize = 10, string? statusFilter = null, string? phone = null, CancellationToken cancellationToken = default);
 
     // دریافت جزئیات کامل و ریز اقلام یک سفارش خاص برای نمایش در مدال
     Task<OrderDetailDto?> GetOrderDetailAsync(Guid orderId, CancellationToken cancellationToken = default);

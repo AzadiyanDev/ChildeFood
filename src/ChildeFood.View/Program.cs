@@ -1,4 +1,5 @@
 using ChildeFood.Application;
+using ChildeFood.Application.Interfaces;
 using ChildeFood.Infrastructure;
 using ChildeFood.Persistence;
 using Microsoft.Extensions.FileProviders;
@@ -28,6 +29,25 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// اطمینان از پاکسازی دیتای خراب و سیدینگ خودکار دیتابیس در زمان استارت
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var schoolService = services.GetRequiredService<ISchoolService>();
+        await schoolService.SeedDefaultSchoolsAsync();
+
+        var foodService = services.GetRequiredService<IFoodService>();
+        await foodService.SeedComprehensiveFoodCatalogAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "خطا در بررسی و سیدینگ اولیه داده‌های دیتابیس");
+    }
+}
 
 // ۵. پایپ‌لاین ریکوئست‌ها
 if (app.Environment.IsDevelopment())
