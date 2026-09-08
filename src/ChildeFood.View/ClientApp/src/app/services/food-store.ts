@@ -1,5 +1,5 @@
 import {Injectable, computed, signal} from '@angular/core';
-import {AddChildRequest, AuthResponse, AuthUser, CategoryItem, ChildItem, DateDayItem, FoodItem, NavTabId, ParentProfile, SchoolItem, SchoolOrder, SendOtpResponse, UpdateParentProfileRequest, WalletTransaction} from '../models/food.model';
+import {AddChildRequest, AuthResponse, AuthUser, CategoryItem, ChildItem, DateDayItem, FoodItem, FoodRecommendationResponse, NavTabId, OrderDetailResponse, OrderItemDetail, OrderSummaryItem, PagedOrdersResponse, ParentProfile, SchoolItem, SchoolOrder, SendOtpResponse, TodayOrderResponse, UpdateParentProfileRequest, WalletSummaryResponse, WalletTransaction} from '../models/food.model';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +15,25 @@ export class FoodStore {
   // لیست مدارس دریافت شده از جدول دیتابیس جهت نمایش در سلکت‌باکس ثبت فرزند
   readonly schools = signal<SchoolItem[]>([]);
 
+  // سیگنال داده‌های خلاصه کیف پول، آخرین تراکنش و سفارش‌های ماه از دیتابیس
+  readonly walletSummary = signal<WalletSummaryResponse | null>(null);
+
+  // سیگنال پیشنهاد غذای امروز (محبوب‌ترین منوی روزانه)
+  readonly dailyRecommendation = signal<FoodRecommendationResponse | null>({
+    id: 'food-rec-default',
+    title: 'جوجه کباب',
+    subtitle: 'طبخ تازه با گوشت گرم و برنج درجه یک',
+    price: 185000,
+    badgeText: 'محبوب بچه‌ها',
+    badgeType: 'popular',
+    emoji: '🍗',
+    calories: 540,
+    protein: 35,
+    carbs: 48,
+    fat: 14,
+    ordersCount: 15,
+  });
+
   // شماره موبایل در انتظار تایید و کد اوتی‌پی شبیه‌سازی‌شده جهت نمایش در توستر بالایی
   readonly pendingPhone = signal<string>('');
   readonly latestOtpCode = signal<string | null>(null);
@@ -28,6 +47,7 @@ export class FoodStore {
     this.restoreAuthSession();
     this.initHistoryNavigation();
     this.loadSchools();
+    this.loadTodayRecommendation();
   }
 
   // بررسی سشن ذخیره‌شده کاربر در لوکال استوریج؛ اگر کاربر قبلاً لاگین کرده باشد سشن بازیابی می‌شود
@@ -946,6 +966,20 @@ export class FoodStore {
   readonly isWalletDrawerOpen = signal<boolean>(false);
   readonly currentAddress = signal<string>('تهران، سعادت‌آباد، خیابان سرو');
 
+  // سفارش‌های پیج‌شده ۱۰ تایی کاربر برای اسکرول بی‌نهایت
+  readonly pagedOrders = signal<OrderSummaryItem[]>([]);
+  readonly ordersTotalCount = signal<number>(0);
+  readonly ordersActiveCount = signal<number>(0);
+  readonly ordersDeliveredCount = signal<number>(0);
+  readonly ordersCurrentPage = signal<number>(1);
+  readonly ordersHasMore = signal<boolean>(false);
+  readonly isOrdersLoading = signal<boolean>(false);
+  readonly isOrdersLoadingMore = signal<boolean>(false);
+
+  // جزئیات کامل سفارش که فقط موقع باز شدن مودال لود میشه (Lazy Loading)
+  readonly selectedOrderDetail = signal<OrderDetailResponse | null>(null);
+  readonly isOrderDetailLoading = signal<boolean>(false);
+
   // Active and recent school meal orders
   readonly schoolOrders = signal<SchoolOrder[]>([
     {
@@ -1525,8 +1559,32 @@ export class FoodStore {
       trackingCode: trackingCode,
     }));
 
-    // افزودن سفارش‌ها به لیست سفارش‌های سیستم
+    // افزودن سفارش‌ها به لیست سفارش‌های سیستم و لیست پیج‌شده
     this.schoolOrders.update((prev) => [...newSchoolOrders, ...prev]);
+
+    // همگام‌سازی فوری با لیست پیج‌شده ۱۰ تایی جهت نمایش لحظه‌ای سفارش ثبت شده به کاربر
+    const newPagedOrders: OrderSummaryItem[] = newSchoolOrders.map((so) => ({
+      id: so.id,
+      orderCode: so.id,
+      childId: so.childId,
+      childName: so.childName,
+      childAvatar: so.childAvatar,
+      schoolName: so.school,
+      grade: so.grade,
+      foodTitle: so.foodTitle,
+      foodSubtitle: so.foodSubtitle,
+      foodEmoji: so.foodEmoji,
+      deliveryTime: so.deliveryTime,
+      dateLabel: so.date,
+      servingDate: new Date().toISOString(),
+      status: 'active',
+      statusText: so.statusText,
+      price: so.price,
+      trackingCode: so.trackingCode,
+    }));
+    this.pagedOrders.update((prev) => [...newPagedOrders, ...prev]);
+    this.ordersTotalCount.update((c) => c + newPagedOrders.length);
+    this.ordersActiveCount.update((c) => c + newPagedOrders.length);
 
     // ۲. در صورت انتخاب پرداخت از کیف پول، کسر موجودی و ثبت تراکنش
     if (paymentMethod === 'wallet' && finalAmount > 0) {
@@ -1629,6 +1687,8 @@ export class FoodStore {
     this.activePage.set('orders');
     this.activeNavTab.set('orders');
     this.pushHistoryState('orders');
+    // لود کردن سفارشات به محض ورود به صفحه
+    this.loadMyOrders(1, false, 'all');
     if (typeof window !== 'undefined') {
       window.scrollTo({top: 0, behavior: 'smooth'});
     }
@@ -2208,6 +2268,33 @@ export class FoodStore {
     };
 
     this.walletTransactions.update((txs) => [newTx, ...txs]);
+
+    // همگام‌سازی بلافاصله با خلاصه کیف پول صفحه اصلی
+    this.walletSummary.update((ws) => ws ? {
+      ...ws,
+      balance: ws.balance + amount,
+      lastTransactionAmount: amount,
+      lastTransactionType: 'deposit',
+      lastTransactionTitle: 'شارژ آنلاین کیف پول',
+      lastTransactionDate: new Date().toISOString(),
+    } : {
+      walletId: 'w-local',
+      balance: this.parentProfile().walletBalance,
+      virtualCardNumber: '6037-9918-0000-0000',
+      lastTransactionAmount: amount,
+      lastTransactionType: 'deposit',
+      lastTransactionTitle: 'شارژ آنلاین کیف پول',
+      lastTransactionDate: new Date().toISOString(),
+      monthOrdersCount: 0,
+    });
+
+    // ثبت در بک‌اند در صورت لاگین بودن کاربر
+    const userId = this.currentUser()?.id;
+    if (userId) {
+      fetch(`/api/wallet/charge/${userId}?amount=${amount}&trackingCode=${trackingCode}`, {
+        method: 'POST',
+      }).catch(() => {});
+    }
   }
 
   // انتخاب مستقیم فرزند برای ثبت سفارش یا بررسی وضعیت
@@ -2294,10 +2381,209 @@ export class FoodStore {
             }
           }
         }
+
+        // واکشی زنده داده‌های کیف پول، سفارش‌های امروز، پیشنهاد روز و سوابق سفارشات از دیتابیس
+        if (dbUser.id) {
+          this.loadWalletSummary(dbUser.id);
+          this.loadTodayOrders(dbUser.id);
+          this.loadTodayRecommendation();
+          this.loadMyOrders(1, false, 'all');
+        }
       }
     } catch {
       // در صورت آفلاین بودن یا خطای شبکه
     }
+  }
+
+  // واکشی خلاصه وضعیت کیف پول (موجودی، آخرین تراکنش، تعداد سفارش‌های ماه) از دیتابیس
+  async loadWalletSummary(parentIdOrPhone?: string): Promise<void> {
+    const user = this.currentUser();
+    const id = parentIdOrPhone || user?.id;
+    const phone = !id && user?.phoneNumber ? user.phoneNumber : null;
+
+    try {
+      let res: Response | null = null;
+      if (id) {
+        res = await fetch(`/api/wallet/summary/${id}`);
+      } else if (phone) {
+        res = await fetch(`/api/wallet/summary-by-phone/${phone}`);
+      }
+
+      if (res && res.ok) {
+        const data: WalletSummaryResponse = await res.json();
+        if (data) {
+          this.walletSummary.set(data);
+          this.parentProfile.update((p) => ({
+            ...p,
+            walletBalance: data.balance,
+          }));
+        }
+      }
+    } catch {
+      // در صورت خطای شبکه یا حالت آفلاین
+    }
+  }
+
+  // واکشی سفارش‌های امروز برای صفحه اصلی به صورت ریل‌تایم از دیتابیس
+  async loadTodayOrders(parentIdOrPhone?: string): Promise<void> {
+    const user = this.currentUser();
+    const id = parentIdOrPhone || user?.id;
+    const phone = !id && user?.phoneNumber ? user.phoneNumber : null;
+
+    try {
+      let res: Response | null = null;
+      if (id) {
+        res = await fetch(`/api/orders/today/${id}`);
+      } else if (phone) {
+        res = await fetch(`/api/orders/today-by-phone/${phone}`);
+      }
+
+      if (res && res.ok) {
+        const data: TodayOrderResponse[] = await res.json();
+        if (Array.isArray(data)) {
+          const mapped = data.map((o) => ({
+            id: o.orderCode || o.id,
+            childId: o.childId,
+            childName: o.childName,
+            childAvatar: o.childAvatar || '/assets/avatars/ali.svg',
+            school: o.schoolName,
+            grade: o.grade,
+            foodTitle: o.foodTitle,
+            foodSubtitle: o.foodSubtitle,
+            foodEmoji: o.foodEmoji,
+            deliveryTime: o.deliveryTime,
+            date: o.dateLabel,
+            status: (o.statusBadgeType === 'delivered' ? 'delivered' : 'delivering') as 'delivered' | 'delivering',
+            statusText: o.statusBadgeText,
+            price: o.totalPrice,
+            trackingCode: o.trackingCode,
+          }));
+          this.todayOrders.set(mapped);
+        }
+      }
+    } catch {
+      // در صورت خطای شبکه یا حالت آفلاین
+    }
+  }
+
+  // واکشی پیشنهاد ویژه امروز (محبوب‌ترین غذای منوی روز) از دیتابیس
+  async loadTodayRecommendation(): Promise<void> {
+    try {
+      const res = await fetch('/api/foods/today-recommendation');
+      if (res.ok) {
+        const text = await res.text();
+        if (!text || text === 'null') {
+          this.dailyRecommendation.set(null);
+        } else {
+          const data: FoodRecommendationResponse = JSON.parse(text);
+          this.dailyRecommendation.set(data);
+        }
+      }
+    } catch {
+      // در صورت خطای شبکه
+    }
+  }
+
+  // سفارش‌های ثبت‌شده کاربر رو ۱۰ تا ۱۰ تا از دیتابیس می‌گیریم که صفحه سنگین نشه و لگ نندازه
+  async loadMyOrders(page = 1, append = false, status: 'all' | 'active' | 'delivered' = 'all'): Promise<void> {
+    const user = this.currentUser();
+    const parentId = user?.id;
+
+    // اگه اسکرول خورده باشه لودینگ پایین صفحه رو روشن می‌کنیم، اگه بار اوله لودینگ کل لیست
+    if (append) {
+      if (this.isOrdersLoadingMore()) return;
+      this.isOrdersLoadingMore.set(true);
+    } else {
+      this.isOrdersLoading.set(true);
+    }
+
+    try {
+      let url = `/api/orders/my-orders/${parentId || ''}?page=${page}&pageSize=10&status=${status}`;
+      const phone = user?.phoneNumber || this.pendingPhone();
+      if (!parentId && phone) {
+        url += `&phone=${encodeURIComponent(phone)}`;
+      }
+
+      const res = await fetch(url);
+      if (res.ok) {
+        const data: PagedOrdersResponse = await res.json();
+        if (data && Array.isArray(data.items)) {
+          this.ordersTotalCount.set(data.totalCount);
+          this.ordersActiveCount.set(data.activeCount);
+          this.ordersDeliveredCount.set(data.deliveredCount);
+          this.ordersCurrentPage.set(data.pageNumber);
+          this.ordersHasMore.set(data.hasMore);
+
+          if (append) {
+            this.pagedOrders.update((prev) => [...prev, ...data.items]);
+          } else {
+            this.pagedOrders.set(data.items);
+          }
+
+          // لیست عمومی سفارش‌ها رو هم به‌روز می‌کنیم که اگه جاهای دیگه ازش استفاده می‌کردن به مشکل نخورن
+          const mappedSchoolOrders: SchoolOrder[] = data.items.map((item) => ({
+            id: item.orderCode || item.id,
+            childId: item.childId,
+            childName: item.childName,
+            childAvatar: item.childAvatar || '/assets/avatars/ali.svg',
+            school: item.schoolName,
+            grade: item.grade,
+            foodTitle: item.foodTitle,
+            foodSubtitle: item.foodSubtitle,
+            foodEmoji: item.foodEmoji,
+            date: item.dateLabel,
+            deliveryTime: item.deliveryTime,
+            status: item.status,
+            statusText: item.statusText,
+            price: item.price,
+            trackingCode: item.trackingCode,
+          }));
+
+          if (append) {
+            this.schoolOrders.update((prev) => [...prev, ...mappedSchoolOrders]);
+          } else {
+            this.schoolOrders.set(mappedSchoolOrders);
+          }
+        }
+      }
+    } catch {
+      // اگه نت قطع بود یا سرور خطا داد، هوای کاربر رو داریم که برنامه کرش نکنه
+    } finally {
+      this.isOrdersLoading.set(false);
+      this.isOrdersLoadingMore.set(false);
+    }
+  }
+
+  // وقتی کاربر اسکرول می‌کنه و می‌رسه ته صفحه، ۱۰ تای بعدی رو صدا می‌زنیم
+  async loadMoreOrders(status: 'all' | 'active' | 'delivered' = 'all'): Promise<void> {
+    if (this.isOrdersLoading() || this.isOrdersLoadingMore() || !this.ordersHasMore()) {
+      return;
+    }
+    const nextPage = this.ordersCurrentPage() + 1;
+    await this.loadMyOrders(nextPage, true, status);
+  }
+
+  // این متد فقط وقتی کاربر روی «جزئیات بیشتر» کلیک کرد صدا زده میشه تا دیتای سنگین الکی لود نشه (Lazy Load)
+  async loadOrderDetail(orderId: string): Promise<OrderDetailResponse | null> {
+    this.isOrderDetailLoading.set(true);
+    try {
+      const res = await fetch(`/api/orders/details/${orderId}`);
+      if (res.ok) {
+        const data: OrderDetailResponse = await res.json();
+        this.selectedOrderDetail.set(data);
+        return data;
+      }
+    } catch {
+      // اگه لود جزئیات با خطا مواجه شد مودال با دیتای پایه باز بمونه
+    } finally {
+      this.isOrderDetailLoading.set(false);
+    }
+    return null;
+  }
+
+  // بستن و ریست کردن دیتای جزئیات سفارش انتخاب‌شده
+  clearOrderDetail(): void {
+    this.selectedOrderDetail.set(null);
   }
 
   // بررسی اینکه آیا آواتار یک فایل تصویری/آدرس عکس است یا ایموجی

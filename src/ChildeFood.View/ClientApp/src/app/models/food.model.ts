@@ -149,3 +149,141 @@ export interface WalletTransaction {
   status: 'successful' | 'failed' | 'pending';
   childName?: string;
 }
+
+// خلاصه وضعیت کیف پول برگشتی از سرور
+export interface WalletSummaryResponse {
+  walletId: string;
+  balance: number;
+  virtualCardNumber: string;
+  lastTransactionAmount?: number | null;
+  lastTransactionType?: string | null;
+  lastTransactionTitle?: string | null;
+  lastTransactionDate?: string | null;
+  monthOrdersCount: number;
+}
+
+// مدل سفارش امروز دریافتی مستقیم از دیتابیس
+export interface TodayOrderResponse {
+  id: string;
+  orderCode: string;
+  childId: string;
+  childName: string;
+  childAvatar?: string;
+  schoolName: string;
+  grade: string;
+  foodTitle: string;
+  foodSubtitle: string;
+  foodEmoji: string;
+  deliveryTime: string;
+  dateLabel: string;
+  servingDate: string;
+  status: number;
+  statusBadgeText: string;
+  statusBadgeType: 'preparing' | 'delivered';
+  totalPrice: number;
+  trackingCode: string;
+}
+
+// مدل پیشنهاد ویژه غذای امروز دریافتی از دیتابیس
+export interface FoodRecommendationResponse {
+  id: string;
+  title: string;
+  subtitle?: string;
+  price: number;
+  badgeText?: string;
+  badgeType?: string;
+  emoji?: string;
+  imageUrl?: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  ingredients?: string;
+  allergens?: string;
+  ordersCount: number;
+}
+
+// مدل خلاصه و سبک سفارش در لیست سفارش‌های کاربر
+export interface OrderSummaryItem {
+  id: string;
+  orderCode: string;
+  childId: string;
+  childName: string;
+  childAvatar?: string;
+  schoolName: string;
+  grade: string;
+  foodTitle: string;
+  foodSubtitle: string;
+  foodEmoji: string;
+  deliveryTime: string;
+  dateLabel: string;
+  servingDate: string;
+  status: 'active' | 'delivered';
+  statusText: string;
+  price: number;
+  trackingCode: string;
+}
+
+// نتیجه صفحه‌بندی شده ۱۰تایی سفارش‌ها از بک‌اند
+export interface PagedOrdersResponse {
+  items: OrderSummaryItem[];
+  totalCount: number;
+  activeCount: number;
+  deliveredCount: number;
+  pageNumber: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+// آیتم‌های ریز داخل یک سفارش
+export interface OrderItemDetail {
+  id: string;
+  foodItemId: string;
+  foodTitle: string;
+  portion: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  emoji: string;
+  imageUrl?: string;
+  calories: number;
+  ingredients?: string;
+}
+
+// مراحل تایم‌لاین پیگیری در مدال
+export interface OrderTimelineStep {
+  title: string;
+  subtitle: string;
+  time: string;
+  isCompleted: boolean;
+  isCurrent: boolean;
+  icon: string;
+}
+
+// جزئیات کامل یک سفارش برای نمایش جامع در مدال
+export interface OrderDetailResponse {
+  id: string;
+  orderCode: string;
+  childId: string;
+  childName: string;
+  childAvatar?: string;
+  schoolName: string;
+  grade: string;
+  dietaryNotes?: string;
+  servingDate: string;
+  dateLabel: string;
+  deliveryTime: string;
+  status: 'active' | 'delivered';
+  statusText: string;
+  totalRawPrice: number;
+  discountAmount: number;
+  finalPayablePrice: number;
+  paymentMethod: string;
+  trackingCode: string;
+  couponCode?: string;
+  createdAt: string;
+  items: OrderItemDetail[];
+  timelineSteps: OrderTimelineStep[];
+}
+
+
