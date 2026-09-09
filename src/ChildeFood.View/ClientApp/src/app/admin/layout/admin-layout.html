@@ -1,0 +1,178 @@
+<div class="min-h-screen bg-[#F8F9FA] text-[#111111] flex flex-col antialiased selection:bg-[#FF6B3D]/20 w-full" dir="rtl">
+  
+  <!-- هدر جزیره‌ای شناور (Floating Islands Header) -->
+  <header class="sticky top-3 z-40 w-full px-4 sm:px-6 lg:px-8 xl:px-10">
+    <div class="flex items-center justify-between gap-3 w-full">
+      
+      <!-- سمت راست: جزیره ۱ (لوگو و نام سیستم) و جزیره ۲ (منوهای چایلد فود) کنار هم -->
+      <div class="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+        
+        <!-- جزیره ۱: لوگوی برند و چایلد فود (چسبیده به راست با آیکون فاوآیکون، پس‌زمینه مشکی و نشان نارنجی) -->
+        <div class="flex items-center gap-2.5 px-4 py-2 bg-white rounded-2xl border border-zinc-200/80 shadow-xs shrink-0">
+          <div class="w-9 h-9 rounded-xl overflow-hidden shadow-xs border border-zinc-900 shrink-0 bg-zinc-950 flex items-center justify-center">
+            <!-- آیکون فاوآیکون چایلدفود با پس‌زمینه مشکی و المان‌های نارنجی برند -->
+            <svg class="w-full h-full" viewBox="0 0 512 512" fill="none">
+              <!-- پس‌زمینه مشکی با گوشه‌های گرد شده مطابق فرم فاوآیکون -->
+              <rect width="512" height="512" rx="128" fill="#111111" />
+              
+              <!-- آیکون دیس و غذای فاوآیکون با رنگ اختصاصی نارنجی چایلد فود -->
+              <g transform="translate(64, 64) scale(0.75)">
+                <!-- بشقاب و پایه دیس غذا -->
+                <rect x="80" y="380" width="352" height="32" rx="16" fill="#FF6B3D" opacity="0.95" />
+                <rect x="120" y="412" width="272" height="16" rx="8" fill="#FF6B3D" opacity="0.6" />
+                
+                <!-- درپوش نیم‌دایره‌ای دیس غذا (Cloche Dome) -->
+                <path d="M 96 350 C 96 200, 416 200, 416 350 Z" fill="#FF6B3D" />
+                
+                <!-- دستگیره دیس غذا -->
+                <circle cx="256" cy="180" r="28" fill="#FF6B3D" />
+                <path d="M 244 196 L 268 196 L 264 220 L 248 220 Z" fill="#FF6B3D" />
+                
+                <!-- امواج بخار عطر غذا -->
+                <path d="M 210 130 Q 225 100 210 70" stroke="#FF6B3D" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.85" />
+                <path d="M 256 120 Q 270 90 256 60" stroke="#FF6B3D" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.95" />
+                <path d="M 302 130 Q 315 100 302 70" stroke="#FF6B3D" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.85" />
+              </g>
+            </svg>
+          </div>
+          <div>
+            <span class="font-black text-sm tracking-tight text-zinc-950 block leading-tight">چایلد فود</span>
+            <span class="text-[10px] font-bold text-[#FF6B3D] tracking-wide block">مدیریت تغذیه مدارس</span>
+          </div>
+        </div>
+
+        <!-- جزیره ۲: منوهای اختصاصی پروژه چایلد فود (بعد از لوگو، سمت راست) -->
+        <nav class="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-2xl border border-zinc-200/80 shadow-xs shrink-0">
+          @for (item of navItems; track item.id) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="bg-zinc-900 text-white shadow-xs"
+              [routerLinkActiveOptions]="{exact: item.id === 'dashboard'}"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-1.5 cursor-pointer whitespace-nowrap text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+            >
+              <span>{{ item.label }}</span>
+            </a>
+          }
+        </nav>
+
+      </div>
+
+      <!-- سمت چپ: جزیره ۳ (نوتیفیکیشن و فرد لاگین شده، چسبیده به سمت چپ) -->
+      <div class="flex items-center gap-2.5 px-3 py-1.5 bg-white rounded-2xl border border-zinc-200/80 shadow-xs shrink-0 relative">
+        
+        <!-- زنگوله اعلان با بج عدد ۴ (دست نخورده طبق دستور کاربر) -->
+        <button
+          type="button"
+          class="relative p-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
+          title="اعلان‌ها و هشدارهای بوفه">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span class="absolute top-1 right-1 w-4 h-4 bg-[#FF6B3D] text-white text-[10px] font-black rounded-full flex items-center justify-center num-fa shadow-xs">
+            {{ dashboardService.dashboardState().adminProfile.unreadNotificationsCount }}
+          </span>
+        </button>
+
+        <!-- خط جداکننده نرم -->
+        <div class="h-6 w-px bg-zinc-200"></div>
+
+        <!-- باکس هویت و آواتار سوپر ادمین به همراه دراپ‌داون خروج از حساب -->
+        <div class="relative">
+          <button
+            type="button"
+            id="admin-profile-btn"
+            (click)="toggleProfileMenu()"
+            class="flex items-center gap-2.5 pl-2 pr-1.5 py-1 rounded-xl transition-all cursor-pointer select-none text-right"
+            [class.bg-zinc-100]="isProfileMenuOpen()"
+            [class.hover:bg-zinc-50]="!isProfileMenuOpen()"
+            title="پروفایل سوپر ادمین"
+          >
+            <div class="relative shrink-0">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-zinc-950 to-zinc-700 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                <span>ع‌آ</span>
+              </div>
+              <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+            </div>
+            <div class="text-right hidden sm:block">
+              <div class="text-xs font-black text-zinc-900 leading-tight">
+                {{ dashboardService.dashboardState().adminProfile.fullName }}
+              </div>
+              <div class="text-[10px] font-bold text-[#FF6B3D] leading-tight mt-0.5">
+                {{ dashboardService.dashboardState().adminProfile.roleTitle }}
+              </div>
+            </div>
+            <!-- آیکون فلش باز شونده دراپ‌داون -->
+            <svg
+              class="w-4 h-4 text-zinc-400 transition-transform duration-200"
+              [class.rotate-180]="isProfileMenuOpen()"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- پس‌زمینه شفاف جهت بستن دراپ‌داون در صورت کلیک روی هر نقطه دیگر -->
+          @if (isProfileMenuOpen()) {
+            <div
+              class="fixed inset-0 z-40 bg-transparent"
+              (click)="isProfileMenuOpen.set(false)"
+            ></div>
+
+            <!-- منوی کشویی مدرن سوپر ادمین -->
+            <div
+              class="absolute left-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-zinc-950/10 border border-zinc-200/90 p-2 z-50 transform origin-top-left transition-all"
+              dir="rtl"
+            >
+              <!-- کارت خلاصه مشخصات ادمین -->
+              <div class="p-2.5 bg-zinc-50 rounded-xl mb-1 flex items-center gap-3 border border-zinc-100">
+                <div class="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                  <span>ع‌آ</span>
+                </div>
+                <div class="overflow-hidden">
+                  <div class="text-xs font-black text-zinc-900 truncate">
+                    {{ dashboardService.dashboardState().adminProfile.fullName }}
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span class="text-[10px] font-bold text-zinc-500">
+                      {{ dashboardService.dashboardState().adminProfile.roleTitle }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="h-px bg-zinc-100 my-1"></div>
+
+              <!-- گزینه خروج از حساب کاربری -->
+              <button
+                type="button"
+                id="btn-admin-logout"
+                (click)="logout()"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors text-right cursor-pointer group"
+              >
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 group-hover:bg-rose-200/70 flex items-center justify-center transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  <span>خروج از حساب</span>
+                </div>
+                <span class="text-[10px] text-zinc-400 group-hover:text-rose-500 transition-colors">خروج</span>
+              </button>
+            </div>
+          }
+        </div>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- فضای اصلی محتوای داشبورد؛ تمام‌عرض و بدون فضای خالی در گوشه‌ها -->
+  <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6">
+    <router-outlet />
+  </main>
+</div>
