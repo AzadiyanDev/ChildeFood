@@ -1,0 +1,588 @@
+<!-- صفحه مدیریت دانش‌آموزان و والدین چایلد فود -->
+<div class="min-h-screen bg-zinc-50 p-6" dir="rtl">
+
+  <!-- ===== هدر صفحه و ابزارهای جستجو و فیلتر ===== -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-xl font-black text-zinc-900 tracking-tight">دانش‌آموزان و والدین</h1>
+      <p class="text-sm text-zinc-500 mt-0.5">مدیریت اولیا، بررسی وضعیت حساب کاربری و جزئیات رژیم غذایی دانش‌آموزان</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- فیلتر وضعیت (همه، فعال، غیرفعال) -->
+      <div class="flex items-center bg-white border border-zinc-200 rounded-xl p-1 shadow-xs">
+        <button
+          type="button"
+          (click)="setStatusFilter('all')"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer {{ statusFilter() === 'all' ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-800' }}"
+        >
+          همه ({{ totalParentsCount() }})
+        </button>
+        <button
+          type="button"
+          (click)="setStatusFilter('active')"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer {{ statusFilter() === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-800' }}"
+        >
+          فعال ({{ activeParentsCount() }})
+        </button>
+        <button
+          type="button"
+          (click)="setStatusFilter('inactive')"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer {{ statusFilter() === 'inactive' ? 'bg-red-600 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-800' }}"
+        >
+          غیرفعال ({{ inactiveParentsCount() }})
+        </button>
+      </div>
+
+      <!-- کادر سرچ هوشمند -->
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input
+          type="text"
+          placeholder="جستجوی والد، فرزند، کدملی یا تلفن..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          class="bg-white border border-zinc-200 rounded-xl pr-10 pl-4 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B3D]/30 focus:border-[#FF6B3D] transition-all w-72 shadow-xs"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== کارت‌های آمار خلاصه (KPI) ===== -->
+  @if (!isLoading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
+      <!-- کل والدین -->
+      <div class="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-3.5 shadow-xs">
+        <div class="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF6B3D] shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-zinc-400">کل اولیا و سرپرستان</p>
+          <p class="text-xl font-black text-zinc-900 num-fa mt-0.5">{{ totalParentsCount() }}</p>
+        </div>
+      </div>
+
+      <!-- والدین فعال -->
+      <div class="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-3.5 shadow-xs">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-zinc-400">والدین با حساب فعال</p>
+          <p class="text-xl font-black text-zinc-900 num-fa mt-0.5">{{ activeParentsCount() }}</p>
+        </div>
+      </div>
+
+      <!-- کل دانش‌آموزان -->
+      <div class="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-3.5 shadow-xs">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-zinc-400">دانش‌آموزان تحت پوشش</p>
+          <p class="text-xl font-black text-zinc-900 num-fa mt-0.5">{{ totalChildrenCount() }} نفر</p>
+        </div>
+      </div>
+
+      <!-- موجودی کیف پول‌ها -->
+      <div class="bg-white rounded-2xl border border-zinc-100 p-4 flex items-center gap-3.5 shadow-xs">
+        <div class="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-zinc-400">کل اعتبار کیف‌پول‌ها</p>
+          <p class="text-base font-black text-purple-700 num-fa mt-0.5">{{ formatPrice(totalWalletBalances()) }}</p>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- ===== جدول لیست اصلی والدین ===== -->
+  <div class="bg-white rounded-2xl border border-zinc-100 shadow-xs overflow-hidden">
+
+    <!-- هدر ستون‌های جدول -->
+    <div class="grid grid-cols-[2fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr_auto] gap-3 px-6 py-3.5 bg-zinc-50/90 border-b border-zinc-100 text-xs font-black text-zinc-500">
+      <span>والد / سرپرست</span>
+      <span>کد ملی</span>
+      <span>فرزندان تحت تکفل</span>
+      <span class="text-center">موجودی کیف پول</span>
+      <span class="text-center">سفارشات</span>
+      <span class="text-center">تاریخ عضویت</span>
+      <span class="text-center">وضعیت</span>
+      <span class="text-center">عملیات</span>
+    </div>
+
+    <!-- اسکلتون لودینگ در زمان بارگذاری -->
+    @if (isLoading()) {
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="grid grid-cols-[2fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr_auto] gap-3 px-6 py-4 border-b border-zinc-50 items-center">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-zinc-100 animate-pulse shrink-0"></div>
+            <div class="space-y-1.5 w-full">
+              <div class="h-3.5 w-32 bg-zinc-100 animate-pulse rounded"></div>
+              <div class="h-2.5 w-24 bg-zinc-100 animate-pulse rounded"></div>
+            </div>
+          </div>
+          <div class="h-3.5 w-20 bg-zinc-100 animate-pulse rounded"></div>
+          <div class="h-6 w-24 bg-zinc-100 animate-pulse rounded-lg"></div>
+          <div class="h-3.5 w-16 bg-zinc-100 animate-pulse rounded mx-auto"></div>
+          <div class="h-3.5 w-8 bg-zinc-100 animate-pulse rounded mx-auto"></div>
+          <div class="h-3.5 w-16 bg-zinc-100 animate-pulse rounded mx-auto"></div>
+          <div class="h-6 w-14 bg-zinc-100 animate-pulse rounded-full mx-auto"></div>
+          <div class="h-8 w-20 bg-zinc-100 animate-pulse rounded-xl mx-auto"></div>
+        </div>
+      }
+    } @else {
+      <!-- ردیف‌های داده‌های والدین -->
+      @for (parent of filteredParents(); track parent.id) {
+        <div class="grid grid-cols-[2fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr_auto] gap-3 px-6 py-4 border-b border-zinc-100/70 hover:bg-zinc-50/80 transition-colors items-center">
+          
+          <!-- ستون ۱: والد / سرپرست -->
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-2xs {{ parent.isActive ? 'bg-orange-100 text-[#FF6B3D]' : 'bg-zinc-100 text-zinc-400' }}">
+              {{ getAvatarLetter(parent.fullName) }}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-black text-zinc-900 truncate">{{ parent.fullName }}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200/60">
+                  {{ parent.roleTitle || 'سرپرست' }}
+                </span>
+              </div>
+              <p class="text-xs text-zinc-400 font-medium num-fa mt-0.5">{{ parent.phoneNumber }}</p>
+            </div>
+          </div>
+
+          <!-- ستون ۲: کد ملی -->
+          <div class="text-xs font-bold text-zinc-600 num-fa">
+            {{ parent.nationalId || '---' }}
+          </div>
+
+          <!-- ستون ۳: فرزندان تحت تکفل -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            @if (parent.childrenNames.length > 0) {
+              @for (childName of parent.childrenNames; track childName) {
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                  </svg>
+                  {{ childName }}
+                </span>
+              }
+            } @else {
+              <span class="text-xs text-zinc-400">بدون فرزند ثبت‌شده</span>
+            }
+          </div>
+
+          <!-- ستون ۴: موجودی کیف پول -->
+          <div class="text-center">
+            <span class="text-xs font-black num-fa {{ parent.walletBalance > 0 ? 'text-emerald-600' : 'text-zinc-400' }}">
+              {{ formatPrice(parent.walletBalance) }}
+            </span>
+          </div>
+
+          <!-- ستون ۵: تعداد سفارشات -->
+          <div class="text-center">
+            <span class="text-xs font-black text-zinc-800 num-fa bg-zinc-100 px-2 py-1 rounded-lg">
+              {{ parent.totalOrdersCount }}
+            </span>
+          </div>
+
+          <!-- ستون ۶: تاریخ عضویت -->
+          <div class="text-center text-xs text-zinc-400 font-medium num-fa">
+            {{ parent.createdAt | date:'yyyy/MM/dd' }}
+          </div>
+
+          <!-- ستون ۷: وضعیت حساب -->
+          <div class="text-center">
+            @if (parent.isActive) {
+              <span class="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                فعال
+              </span>
+            } @else {
+              <span class="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-200/60">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                مسدود / غیرفعال
+              </span>
+            }
+          </div>
+
+          <!-- ستون ۸: عملیات (دکمه جزئیات + تغییر وضعیت) -->
+          <div class="flex items-center justify-end gap-2">
+            <!-- دکمه جزئیات کامل -->
+            <button
+              type="button"
+              (click)="openDetail(parent)"
+              class="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+              title="مشاهده جزئیات والد و فرزندان"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-[#FF6B3D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>جزئیات</span>
+            </button>
+
+            <!-- دکمه تغییر وضعیت فعال / مسدود -->
+            <button
+              type="button"
+              (click)="openToggleConfirm(parent, $event)"
+              class="p-1.5 rounded-xl border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
+              title="{{ parent.isActive ? 'مسدودسازی حساب کاربری' : 'رفع مسدودی حساب' }}"
+            >
+              @if (parent.isActive) {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-zinc-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+              }
+            </button>
+          </div>
+
+        </div>
+      }
+
+      <!-- حالت نبود داده با سرچ -->
+      @if (filteredParents().length === 0) {
+        <div class="py-12 text-center text-zinc-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-sm font-bold text-zinc-600">والد یا سرپرستی با این مشخصات یافت نشد.</p>
+          <p class="text-xs text-zinc-400 mt-1">لطفاً عبارت جستجو یا فیلتر را تغییر دهید.</p>
+        </div>
+      }
+    }
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ===== مودال جامع جزئیات والد و مشخصات کامل فرزندان (دانش‌آموزان) ===== -->
+<!-- ========================================================================= -->
+@if (modalMode() === 'detail') {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-40" (click)="closeModal()"></div>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" dir="rtl">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-zinc-100" (click)="$event.stopPropagation()">
+
+      <!-- هدر مودال -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/70">
+        <div class="flex items-center gap-3.5">
+          @if (selectedParent(); as p) {
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base shadow-xs {{ p.isActive ? 'bg-[#FF6B3D] text-white' : 'bg-zinc-200 text-zinc-600' }}">
+              {{ getAvatarLetter(p.fullName) }}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base font-black text-zinc-900">{{ p.fullName }}</h2>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700 border border-zinc-200/70">
+                  {{ p.roleTitle || 'سرپرست' }}
+                </span>
+                @if (p.isActive) {
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">حساب فعال</span>
+                } @else {
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200/60">حساب مسدود</span>
+                }
+              </div>
+              <p class="text-xs text-zinc-400 font-medium num-fa mt-0.5">شماره همراه: {{ p.phoneNumber }}</p>
+            </div>
+          }
+        </div>
+        
+        <button
+          type="button"
+          (click)="closeModal()"
+          class="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- محتوای اسکرول‌پذیر مودال -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        @if (isLoadingDetail()) {
+          <div class="space-y-4">
+            <div class="grid grid-cols-4 gap-3">
+              @for (i of [1,2,3,4]; track i) {
+                <div class="h-20 bg-zinc-100 animate-pulse rounded-2xl"></div>
+              }
+            </div>
+            <div class="h-28 bg-zinc-100 animate-pulse rounded-2xl"></div>
+            <div class="h-44 bg-zinc-100 animate-pulse rounded-2xl"></div>
+          </div>
+        } @else if (parentDetail(); as detail) {
+
+          <!-- ۱. کارت‌های شاخص سریع والد -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-orange-50/70 border border-orange-100/70 rounded-2xl p-3.5 text-center">
+              <p class="text-xs font-bold text-zinc-500">فرزندان تحت پوشش</p>
+              <p class="text-xl font-black text-[#FF6B3D] num-fa mt-1">{{ detail.children.length }} نفر</p>
+            </div>
+            <div class="bg-emerald-50/70 border border-emerald-100/70 rounded-2xl p-3.5 text-center">
+              <p class="text-xs font-bold text-zinc-500">موجودی کیف پول</p>
+              <p class="text-sm font-black text-emerald-700 num-fa mt-1">{{ formatPrice(detail.walletBalance) }}</p>
+            </div>
+            <div class="bg-blue-50/70 border border-blue-100/70 rounded-2xl p-3.5 text-center">
+              <p class="text-xs font-bold text-zinc-500">کل سفارش‌های ناهار</p>
+              <p class="text-xl font-black text-blue-700 num-fa mt-1">{{ detail.totalOrdersCount }} عدد</p>
+            </div>
+            <div class="bg-purple-50/70 border border-purple-100/70 rounded-2xl p-3.5 text-center">
+              <p class="text-xs font-bold text-zinc-500">مجموع خرید تاکنون</p>
+              <p class="text-sm font-black text-purple-700 num-fa mt-1">{{ formatPrice(detail.totalSpent) }}</p>
+            </div>
+          </div>
+
+          <!-- ۲. اطلاعات تکمیلی سرپرست (کدملی، نشانی، پیامک) -->
+          <div class="bg-zinc-50 rounded-2xl border border-zinc-100 p-4">
+            <h3 class="text-xs font-black text-zinc-700 mb-3 flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              مشخصات هویتی و ارتباطی سرپرست
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <span class="text-zinc-400 font-bold block mb-0.5">کد ملی سرپرست:</span>
+                <span class="font-black text-zinc-800 num-fa">{{ detail.nationalId || 'ثبت نشده' }}</span>
+              </div>
+              <div>
+                <span class="text-zinc-400 font-bold block mb-0.5">وضعیت پیامک اعلان بوفه:</span>
+                <span class="font-bold {{ detail.isSmsNotificationActive ? 'text-emerald-700' : 'text-zinc-400' }}">
+                  {{ detail.isSmsNotificationActive ? 'فعال (ارسال گزارش رزرو غذا)' : 'غیرفعال' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-zinc-400 font-bold block mb-0.5">تاریخ ثبت‌نام در سامانه:</span>
+                <span class="font-bold text-zinc-800 num-fa">{{ detail.createdAt | date:'yyyy/MM/dd HH:mm' }}</span>
+              </div>
+              <div class="md:col-span-3 pt-2 border-t border-zinc-200/60 mt-1">
+                <span class="text-zinc-400 font-bold block mb-0.5">نشانی محل سکونت:</span>
+                <span class="font-medium text-zinc-800 leading-relaxed">{{ detail.address || 'نشانی ثبت نشده است.' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ۳. بخش اختصاصی فرزندان (دانش‌آموزان تحت تکفل) -->
+          <div>
+            <div class="flex items-center justify-between mb-3.5">
+              <h3 class="text-sm font-black text-zinc-900 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[#FF6B3D]" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a10.97 10.97 0 01-.25 2.449c-.067.433-.105.875-.113 1.32-.016.92.203 1.815.626 2.593.424.778 1.05 1.419 1.813 1.857.763.438 1.638.681 2.524.707.886.026 1.765-.164 2.548-.553a6.002 6.002 0 002.046-1.748c.48-.68.784-1.48.88-2.316.036-.312.054-.627.054-.943 0-.756-.11-1.492-.322-2.19l1.644-.705a1 1 0 000-1.84l-7-3z" />
+                </svg>
+                فرزندان و دانش‌آموزان تحت تکفل ({{ detail.children.length }} نفر)
+              </h3>
+              <span class="text-[11px] font-bold text-zinc-400">اطلاعات تغذیه‌ای، مدرسه و حساسیت‌های بوفه</span>
+            </div>
+
+            @if (detail.children.length > 0) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                @for (child of detail.children; track child.id) {
+                  <div class="bg-white rounded-2xl border border-zinc-200/80 p-4 shadow-xs hover:border-[#FF6B3D]/50 transition-all flex flex-col justify-between">
+                    
+                    <div>
+                      <!-- سربرگ کارت کودک -->
+                      <div class="flex items-start justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-3">
+                          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-400 to-amber-300 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                            {{ getAvatarLetter(child.fullName) }}
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <h4 class="text-sm font-black text-zinc-900">{{ child.fullName }}</h4>
+                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ child.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-zinc-100 text-zinc-500' }}">
+                                {{ child.isActive ? 'دانش‌آموز فعال' : 'غیرفعال' }}
+                              </span>
+                            </div>
+                            <p class="text-xs text-zinc-400 mt-0.5">
+                              پایه: <span class="font-bold text-zinc-700">{{ child.grade }}</span> • سن: <span class="font-bold text-zinc-700 num-fa">{{ child.age }} سال</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <!-- دکمه تاگل فعال/غیرفعال دانش‌آموز -->
+                        <button
+                          type="button"
+                          (click)="toggleChildStatus(child)"
+                          class="text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors cursor-pointer {{ child.isActive ? 'border-zinc-200 text-zinc-500 hover:text-red-500 hover:bg-red-50' : 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100' }}"
+                          title="تغییر وضعیت فعال بودن دانش‌آموز"
+                        >
+                          {{ child.isActive ? 'غیرفعال‌سازی' : 'فعال‌سازی' }}
+                        </button>
+                      </div>
+
+                      <!-- مدرسه محل تحصیل -->
+                      <div class="flex items-center gap-2 text-xs bg-zinc-50 px-3 py-2 rounded-xl mb-3 border border-zinc-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <span class="text-zinc-500">مدرسه:</span>
+                        <span class="font-bold text-zinc-800">{{ child.schoolName }}</span>
+                        @if (child.schoolBranch) {
+                          <span class="text-[10px] text-zinc-400">({{ child.schoolBranch }})</span>
+                        }
+                      </div>
+
+                      <!-- یادداشت‌های رژیم و حساسیت غذایی -->
+                      <div class="mb-2.5">
+                        @if (child.dietaryNotes) {
+                          <div class="p-2.5 bg-amber-50/80 border border-amber-200/70 rounded-xl text-xs flex items-start gap-2 text-amber-900">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            <div>
+                              <span class="font-black block text-[11px] text-amber-800 mb-0.5">نکات و حساسیت‌های تغذیه‌ای:</span>
+                              <p class="leading-relaxed">{{ child.dietaryNotes }}</p>
+                            </div>
+                          </div>
+                        } @else {
+                          <div class="p-2 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs flex items-center gap-1.5 text-emerald-800">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>فاقد حساسیت غذایی یا پرهیز دارویی</span>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- غذای مورد علاقه -->
+                      @if (child.favoriteFood) {
+                        <div class="flex items-center gap-1.5 text-xs text-zinc-600 mb-3 bg-orange-50/60 border border-orange-100 px-3 py-1.5 rounded-xl">
+                          <span class="text-zinc-400 font-bold">غذای مورد علاقه:</span>
+                          <span class="font-black text-[#FF6B3D]">{{ child.favoriteFood }}</span>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- خلاصه آماری سفارش‌های کودک -->
+                    <div class="flex items-center justify-between pt-2.5 border-t border-zinc-100 text-xs text-zinc-500">
+                      <span>تعداد سفارش: <strong class="text-zinc-800 num-fa">{{ child.ordersCount }}</strong></span>
+                      <span>مجموع هزینه‌ها: <strong class="text-emerald-700 num-fa">{{ formatPrice(child.totalSpent) }}</strong></span>
+                    </div>
+
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="p-4 bg-zinc-50 rounded-2xl text-center text-zinc-400 text-xs">
+                هنوز فرزندی برای این والد ثبت نشده است.
+              </div>
+            }
+          </div>
+
+          <!-- ۴. تاریخچه سفارش‌های اخیر برای فرزندان این والد -->
+          @if (detail.recentOrders.length > 0) {
+            <div>
+              <h3 class="text-xs font-black text-zinc-500 mb-2.5 uppercase tracking-wide">۵ سفارش اخیر ثبت‌شده</h3>
+              <div class="border border-zinc-100 rounded-2xl overflow-hidden shadow-2xs">
+                @for (order of detail.recentOrders; track order.orderCode) {
+                  <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-50 last:border-0 hover:bg-zinc-50/60 transition-colors">
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs font-mono font-bold text-zinc-400 num-fa">{{ order.orderCode }}</span>
+                      <span class="text-xs font-black text-zinc-800">{{ order.childName }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs text-zinc-400 num-fa">{{ order.servingDate }} (ساعت {{ order.deliveryTime }})</span>
+                      <span class="text-xs font-black num-fa text-emerald-700">{{ formatPrice(order.finalPayablePrice) }}</span>
+                      <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full border {{ getOrderStatusBadgeClass(order.statusLabel) }}">
+                        {{ order.statusLabel }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+        }
+
+      </div>
+
+      <!-- فوتر مودال -->
+      <div class="px-6 py-3.5 border-t border-zinc-100 bg-zinc-50 flex items-center justify-end">
+        <button
+          type="button"
+          (click)="closeModal()"
+          class="px-5 py-2 rounded-xl text-xs font-black bg-zinc-200 hover:bg-zinc-300 text-zinc-700 transition-colors cursor-pointer"
+        >
+          بستن پنجره
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- ===== مودال تایید تغییر وضعیت فعال / مسدود والد ===== -->
+<!-- ========================================================================= -->
+@if (modalMode() === 'confirm-toggle') {
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-xs z-40" (click)="closeModal()"></div>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center" (click)="$event.stopPropagation()">
+
+      @if (selectedParent(); as parent) {
+        <div class="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center {{ parent.isActive ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-600' }}">
+          @if (parent.isActive) {
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        </div>
+
+        <h3 class="text-base font-black text-zinc-900 mb-1.5">
+          {{ parent.isActive ? 'مسدودسازی حساب والد' : 'فعال‌سازی مجدد حساب والد' }}
+        </h3>
+
+        <p class="text-xs text-zinc-500 leading-relaxed mb-6">
+          آیا از {{ parent.isActive ? 'مسدود کردن' : 'فعال‌سازی مجدد' }} حساب کاربری 
+          <strong class="text-zinc-800">{{ parent.fullName }}</strong> اطمینان دارید؟
+          @if (parent.isActive) {
+            <span class="block text-red-500 mt-1">با این کار دسترسی والد به ثبت و رزرو غذای مدارس موقتاً قطع می‌شود.</span>
+          }
+        </p>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="closeModal()"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors cursor-pointer"
+          >
+            انصراف
+          </button>
+          <button
+            type="button"
+            (click)="confirmToggle()"
+            [disabled]="isToggling()"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black text-white transition-colors cursor-pointer {{ parent.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700' }} disabled:opacity-50"
+          >
+            {{ isToggling() ? 'در حال ثبت...' : (parent.isActive ? 'بله، مسدود کن' : 'بله، فعال کن') }}
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}
