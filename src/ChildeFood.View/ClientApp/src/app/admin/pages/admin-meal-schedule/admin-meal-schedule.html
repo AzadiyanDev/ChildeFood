@@ -1,0 +1,345 @@
+<!-- صفحه برنامه غذایی و منو — دسکتاپ‌انلی، تم نارنجی-مشکی-سفید -->
+<div class="min-h-screen bg-zinc-50 p-6" dir="rtl">
+
+  <!-- هدر صفحه -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-black text-zinc-900">برنامه غذایی و منو</h1>
+      <p class="text-sm text-zinc-400 mt-0.5">وعده‌های غذایی روزانه مدارس را مدیریت کنید</p>
+    </div>
+    @if (selectedDay() && !selectedDay()!.isPast) {
+      <button
+        (click)="openAddModal()"
+        class="flex items-center gap-2 bg-[#FF6B3D] hover:bg-orange-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors shadow-sm shadow-orange-200"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        افزودن غذا به روز انتخابی
+      </button>
+    }
+  </div>
+
+  <!-- نوار تقویم افقی -->
+  <div class="bg-white rounded-2xl border border-zinc-100 shadow-sm p-4 mb-5">
+    @if (isLoadingCalendar()) {
+      <div class="flex gap-2">
+        @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track i) {
+          <div class="flex-shrink-0 w-[60px] h-[72px] rounded-xl bg-zinc-100 animate-pulse"></div>
+        }
+      </div>
+    } @else {
+      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        @for (day of calendarDays(); track day.date) {
+          <button
+            (click)="selectDay(day)"
+            class="flex-shrink-0 w-[60px] flex flex-col items-center justify-center rounded-xl py-2.5 px-1 transition-all duration-150 relative select-none
+              {{
+                selectedDay()?.date === day.date
+                  ? day.isToday
+                    ? 'bg-[#FF6B3D] text-white shadow-md shadow-orange-200 ring-0'
+                    : 'bg-zinc-900 text-white shadow-md'
+                  : day.isToday
+                    ? 'bg-orange-50 text-[#FF6B3D] ring-2 ring-[#FF6B3D] ring-offset-1'
+                    : day.isPast
+                      ? 'bg-zinc-50 text-zinc-400 hover:bg-zinc-100'
+                      : day.hasSchedule
+                        ? 'border-2 border-zinc-800 text-zinc-800 bg-white hover:bg-zinc-50'
+                        : 'border border-zinc-200 text-zinc-500 bg-white hover:bg-zinc-50'
+              }}"
+          >
+            <!-- نام مختصر روز هفته -->
+            <span class="text-[10px] font-bold leading-none mb-1 opacity-80">{{ day.dayName.slice(0, 3) }}</span>
+            <!-- عدد روز -->
+            <span class="text-lg font-black leading-none num-fa">{{ day.dayNumber }}</span>
+            <!-- بج تعداد غذا -->
+            @if (day.hasSchedule) {
+              <span class="mt-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none num-fa
+                {{
+                  selectedDay()?.date === day.date || day.isToday
+                    ? 'bg-white/25 text-white'
+                    : 'bg-[#FF6B3D] text-white'
+                }}">
+                {{ day.scheduledItemCount }}
+              </span>
+            } @else {
+              <span class="mt-1.5 h-4 block"></span>
+            }
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- محتوای روز انتخابی -->
+  @if (selectedDay(); as day) {
+    <div class="bg-white rounded-2xl border border-zinc-100 shadow-sm">
+      <!-- هدر روز -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+        <div class="flex items-center gap-3">
+          <!-- نشانگر وضعیت -->
+          <div class="w-2 h-2 rounded-full
+            {{ day.isToday ? 'bg-[#FF6B3D]' : day.isPast ? 'bg-zinc-300' : 'bg-emerald-400' }}">
+          </div>
+          <div>
+            <span class="text-sm font-black text-zinc-900">
+              {{ day.dayName }}
+              @if (day.isToday) {<span class="text-[#FF6B3D]"> — امروز</span>}
+              @if (day.isPast) {<span class="text-zinc-400"> — گذشته</span>}
+            </span>
+            <p class="text-xs text-zinc-400 num-fa">{{ day.date }}</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          @if (day.isPast) {
+            <span class="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              فقط نمایش
+            </span>
+          }
+          @if (!day.isPast && daySchedule().length > 0) {
+            <span class="text-xs text-zinc-500 bg-zinc-50 px-3 py-1.5 rounded-lg num-fa">
+              {{ daySchedule().length }} غذا
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- بدنه محتوا -->
+      <div class="p-6">
+        @if (isLoadingSchedule()) {
+          <!-- اسکلتون لودینگ -->
+          <div class="grid grid-cols-5 gap-3">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="h-36 rounded-xl bg-zinc-100 animate-pulse"></div>
+            }
+          </div>
+        } @else if (daySchedule().length === 0) {
+          <!-- حالت خالی -->
+          <div class="flex flex-col items-center justify-center py-16">
+            <div class="w-16 h-16 rounded-2xl bg-zinc-100 flex items-center justify-center text-3xl mb-4">🍽️</div>
+            <p class="text-sm font-bold text-zinc-700 mb-1">
+              @if (day.isPast) {هیچ برنامه‌ای برای این روز ثبت نشده بود}
+              @else {این روز هنوز هیچ غذایی نداره}
+            </p>
+            <p class="text-xs text-zinc-400">
+              @if (!day.isPast) {با دکمه «افزودن غذا» شروع کن}
+            </p>
+            @if (!day.isPast) {
+              <button
+                (click)="openAddModal()"
+                class="mt-5 flex items-center gap-2 bg-[#FF6B3D] hover:bg-orange-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                افزودن اولین غذا
+              </button>
+            }
+          </div>
+        } @else {
+          <!-- گرید غذاها -->
+          <div class="grid grid-cols-5 gap-3">
+            @for (meal of daySchedule(); track meal.scheduleId) {
+              <div class="group relative border border-zinc-100 rounded-2xl p-4 hover:border-zinc-200 hover:shadow-sm transition-all bg-white">
+                <!-- دکمه حذف هاور -->
+                @if (!day.isPast) {
+                  <button
+                    (click)="removeMeal(meal.scheduleId)"
+                    class="absolute top-2.5 left-2.5 z-10 w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600"
+                    title="حذف از برنامه"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                }
+
+                <!-- ایموجی -->
+                <div class="text-4xl leading-none mb-3">{{ meal.emoji ?? '🍽️' }}</div>
+
+                <!-- بج دسته‌بندی -->
+                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 {{ getCategoryBadgeClass(meal.category) }}">
+                  {{ getCategoryLabel(meal.category) }}
+                </span>
+
+                <!-- عنوان -->
+                <h3 class="text-sm font-black text-zinc-900 leading-snug mb-2">{{ meal.title }}</h3>
+
+                <!-- اطلاعات -->
+                <div class="flex flex-col gap-1 mt-auto">
+                  <p class="text-xs font-bold text-[#FF6B3D] num-fa">{{ formatPrice(meal.price) }}</p>
+                  <p class="text-[11px] text-zinc-400 num-fa">ظرفیت {{ meal.maxCapacity }} نفر</p>
+                </div>
+              </div>
+            }
+
+            <!-- کارت اضافه کردن غذای جدید — فقط برای امروز و آینده -->
+            @if (!day.isPast) {
+              <button
+                (click)="openAddModal()"
+                class="border-2 border-dashed border-zinc-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-zinc-400 hover:border-[#FF6B3D] hover:text-[#FF6B3D] hover:bg-orange-50/50 transition-all group"
+              >
+                <div class="w-10 h-10 rounded-xl border-2 border-dashed border-zinc-200 group-hover:border-[#FF6B3D] flex items-center justify-center transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                </div>
+                <span class="text-xs font-bold">افزودن غذا</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>
+
+<!-- مودال انتخاب غذا -->
+@if (showModal()) {
+  <!-- اوورلی -->
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" (click)="closeModal()"></div>
+
+  <!-- پنل مودال -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-8" dir="rtl">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col" (click)="$event.stopPropagation()">
+
+      <!-- هدر مودال -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+        <div>
+          <h2 class="text-sm font-black text-zinc-900">انتخاب غذا</h2>
+          <p class="text-xs text-zinc-400 mt-0.5">
+            @if (selectedFoodIds().size > 0) {
+              <span class="text-[#FF6B3D] font-bold num-fa">{{ selectedFoodIds().size }} غذا</span> انتخاب شده
+            } @else {
+              روی غذاهای مورد نظر کلیک کنید
+            }
+          </p>
+        </div>
+        <button (click)="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- سرچ‌باکس -->
+      <div class="px-5 py-3 border-b border-zinc-100">
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="جستجو در غذاها..."
+            (input)="onModalSearch($event)"
+            class="w-full bg-zinc-50 border border-zinc-200 rounded-xl pr-10 pl-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B3D]/30 focus:border-[#FF6B3D] transition-all"
+          />
+        </div>
+      </div>
+
+      <!-- لیست غذاها -->
+      <div class="flex-1 overflow-y-auto p-4">
+        @if (isLoadingFoodItems()) {
+          <div class="grid grid-cols-3 gap-2.5">
+            @for (i of [1,2,3,4,5,6]; track i) {
+              <div class="h-20 rounded-xl bg-zinc-100 animate-pulse"></div>
+            }
+          </div>
+        } @else if (filteredFoodItems().length === 0) {
+          <div class="py-10 text-center text-zinc-400 text-sm">نتیجه‌ای پیدا نشد</div>
+        } @else {
+          <div class="grid grid-cols-3 gap-2.5">
+            @for (food of filteredFoodItems(); track food.id) {
+              <!-- حالت: قبلاً اضافه شده -->
+              @if (isAlreadyAdded(food.id)) {
+                <div class="relative flex items-center gap-3 p-3 rounded-xl border border-zinc-100 bg-zinc-50 opacity-60 cursor-not-allowed">
+                  <!-- نشانگر «موجود» -->
+                  <div class="absolute top-2 left-2 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m20 6-11 11-5-5"/>
+                    </svg>
+                  </div>
+                  <span class="text-2xl leading-none">{{ food.emoji ?? '🍽️' }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-zinc-600 truncate">{{ food.title }}</p>
+                    <p class="text-[10px] text-emerald-600 font-bold mt-0.5">در برنامه موجود است</p>
+                  </div>
+                </div>
+              }
+              <!-- حالت: قابل انتخاب -->
+              @else if (food.isAvailable) {
+                <button
+                  (click)="toggleFoodSelection(food)"
+                  class="relative flex items-center gap-3 p-3 rounded-xl border text-right transition-all
+                    {{
+                      selectedFoodIds().has(food.id)
+                        ? 'border-[#FF6B3D] bg-orange-50 ring-1 ring-[#FF6B3D]'
+                        : 'border-zinc-100 bg-white hover:border-zinc-300 hover:bg-zinc-50'
+                    }}"
+                >
+                  <!-- تیک انتخاب -->
+                  @if (selectedFoodIds().has(food.id)) {
+                    <div class="absolute top-2 left-2 w-5 h-5 bg-[#FF6B3D] rounded-full flex items-center justify-center shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m20 6-11 11-5-5"/>
+                      </svg>
+                    </div>
+                  }
+                  <span class="text-2xl leading-none">{{ food.emoji ?? '🍽️' }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-zinc-900 truncate leading-snug">{{ food.title }}</p>
+                    <p class="text-[10px] text-zinc-400 mt-0.5 num-fa">{{ formatPrice(food.price) }}</p>
+                    <span class="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1 {{ getCategoryBadgeClass(food.category) }}">
+                      {{ getCategoryLabel(food.category) }}
+                    </span>
+                  </div>
+                </button>
+              }
+              <!-- حالت: ناموجود -->
+              @else {
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-zinc-100 bg-zinc-50/50 opacity-40 cursor-not-allowed">
+                  <span class="text-2xl leading-none grayscale">{{ food.emoji ?? '🍽️' }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-zinc-500 truncate">{{ food.title }}</p>
+                    <p class="text-[10px] text-red-400 font-bold mt-0.5">ناموجود</p>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- فوتر مودال -->
+      <div class="px-5 py-4 border-t border-zinc-100 flex items-center justify-between gap-3">
+        <button (click)="closeModal()" class="text-sm font-bold text-zinc-500 hover:text-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-100 transition-colors">
+          انصراف
+        </button>
+        <button
+          (click)="confirmAddMeals()"
+          [disabled]="selectedFoodIds().size === 0 || isSaving()"
+          class="flex items-center gap-2 bg-[#FF6B3D] hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors"
+        >
+          @if (isSaving()) {
+            <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            در حال ذخیره...
+          } @else {
+            افزودن
+            @if (selectedFoodIds().size > 0) {
+              <span class="bg-white/20 px-2 py-0.5 rounded-lg text-xs num-fa">{{ selectedFoodIds().size }}</span>
+              غذا به برنامه
+            }
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
