@@ -14,6 +14,9 @@ public class Wallet : BaseEntity
     // شماره کارت اعتباری مجازی جهت نمایش شیک و دوستانه توی اپ موبایل (مثلاً 6037-9918-1234-5678)
     public string VirtualCardNumber { get; set; } = string.Empty;
 
+    // وضعیت فعال بودن یا مسدود بودن کیف پول
+    public bool IsActive { get; set; } = true;
+
     // آخرین زمان تغییر یا بروزرسانی موجودی
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 

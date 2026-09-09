@@ -1,9 +1,12 @@
 import {DOCUMENT} from '@angular/common';
 import {ChangeDetectionStrategy, Component, effect, inject, OnDestroy, signal} from '@angular/core';
+import {RouterLink} from '@angular/router';
 import {FoodStore} from '../../services/food-store';
 
 @Component({
   selector: 'app-profile-page',
+  standalone: true,
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div id="profile-page-view" class="px-5 pt-3 pb-8 animate-in fade-in duration-200" data-purpose="profile-page">
@@ -175,8 +178,29 @@ import {FoodStore} from '../../services/food-store';
           </div>
         </div>
 
-        <!-- LOGOUT SECTION (در نهایت خروج از حساب) -->
+        <!-- دکمه ورود سریع به پنل ادمین -->
         <div class="pt-2">
+          <a
+            routerLink="/admin"
+            id="btn-goto-admin"
+            class="w-full py-3.5 bg-zinc-950 hover:bg-zinc-900 active:scale-98 text-white font-black text-xs rounded-2xl flex items-center justify-between px-4 shadow-sm border border-zinc-800 transition cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-zinc-800 text-[#FF6B3D] flex items-center justify-center font-black">
+                ⚡
+              </div>
+              <div class="text-right">
+                <span class="block text-xs font-black text-white">ورود به پنل مدیریت (سوپر ادمین)</span>
+                <span class="block text-[10px] text-zinc-400 font-normal">داشبورد تحلیلی و تراکنش‌های زنده</span>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-[#FF6B3D] transform rotate-180" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </a>
+        </div>
+
+        <!-- LOGOUT SECTION (در نهایت خروج از حساب) -->
+        <div class="pt-1">
           <button
             id="btn-profile-logout"
             type="button"

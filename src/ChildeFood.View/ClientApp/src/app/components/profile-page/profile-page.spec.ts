@@ -1,4 +1,5 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {provideRouter} from '@angular/router';
 import {vi} from 'vitest';
 import {ProfilePage} from './profile-page';
 import {FoodStore} from '../../services/food-store';
@@ -11,7 +12,7 @@ describe('ProfilePage Component — تست صفحه تنظیمات پروفای�
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProfilePage],
-      providers: [FoodStore],
+      providers: [FoodStore, provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProfilePage);

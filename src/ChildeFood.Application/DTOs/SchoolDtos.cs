@@ -22,21 +22,3 @@ public class SchoolDto
     public bool IsActive { get; set; } = true;
 }
 
-// مدل ایجاد مدرسه جدید توسط ادمین سیستم
-public class CreateSchoolDto
-{
-    // نام مدرسه یا مجتمع آموزشی
-    public string Name { get; set; } = string.Empty;
-
-    // کد شعبه یا کد واحد آموزشی (اختیاری)
-    public string? BranchCode { get; set; }
-
-    // آدرس مدرسه
-    public string? Address { get; set; }
-
-    // ساعت توزیع ناهار بوفه
-    public string? DefaultLunchTime { get; set; }
-
-    // مسئول هماهنگی یا رابط تغذیه
-    public string? ContactPerson { get; set; }
-}
