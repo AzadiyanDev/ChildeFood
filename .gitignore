@@ -491,3 +491,7 @@ $RECYCLE.BIN/
 
 # User Uploads
 **/uploads/
+
+# Agent directories and temporary requests
+.agents/
+ORIGINAL_REQUEST.md
