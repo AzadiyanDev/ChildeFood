@@ -22,6 +22,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

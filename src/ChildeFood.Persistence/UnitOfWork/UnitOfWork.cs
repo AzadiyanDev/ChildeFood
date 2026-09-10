@@ -16,6 +16,7 @@ public class UnitOfWork : IUnitOfWork
     private IOrderRepository? _orderRepository;
     private IWalletRepository? _walletRepository;
     private ICouponRepository? _couponRepository;
+    private IOtpRepository? _otpRepository;
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -27,6 +28,7 @@ public class UnitOfWork : IUnitOfWork
     public IOrderRepository Orders => _orderRepository ??= new OrderRepository(_context);
     public IWalletRepository Wallets => _walletRepository ??= new WalletRepository(_context);
     public ICouponRepository Coupons => _couponRepository ??= new CouponRepository(_context);
+    public IOtpRepository OtpCodes => _otpRepository ??= new OtpRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

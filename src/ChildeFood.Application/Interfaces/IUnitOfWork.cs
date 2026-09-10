@@ -18,6 +18,9 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     // دسترسی مستقیم به ریپازیتوری کوپن‌ها
     ICouponRepository Coupons { get; }
 
+    // دسترسی مستقیم به ریپازیتوری کدهای یکبارمصرف ورود (OTP)
+    IOtpRepository OtpCodes { get; }
+
     // ذخیره کردن تمامی تغییرات در دیتابیس
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

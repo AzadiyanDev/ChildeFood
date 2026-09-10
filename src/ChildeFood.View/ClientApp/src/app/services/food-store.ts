@@ -1844,9 +1844,10 @@ export class FoodStore {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        const serverMsg = err.message || err.title || (err.errors ? Object.values(err.errors).flat().join(' ') : null);
         return {
           success: false,
-          message: err.message || 'خطا در ارسال کد تایید.',
+          message: serverMsg || 'خطا در ارسال کد تایید.',
           expirySeconds: 0,
         };
       }
@@ -1893,9 +1894,10 @@ export class FoodStore {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        const serverMsg = err.message || err.title || (err.errors ? Object.values(err.errors).flat().join(' ') : null);
         return {
           success: false,
-          message: err.message || 'کد تایید وارد شده صحیح نمی‌باشد.',
+          message: serverMsg || 'کد تایید وارد شده صحیح نمی‌باشد.',
           isNewUser: false,
         };
       }

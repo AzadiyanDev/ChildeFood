@@ -36,8 +36,8 @@ public class UserService : IUserService
         _environment = environment;
     }
 
-    // ارسال کد یکبارمصرف؛ شماره رو چک می‌کنیم، یه کد ۵ رقمی تولید می‌کنیم و تو کش نگه می‌داریم
-    public Task<SendOtpResponseDto> SendOtpAsync(SendOtpRequestDto request, CancellationToken cancellationToken = default)
+    // ارسال کد یکبارمصرف؛ شماره رو چک می‌کنیم، یه کد ۵ رقمی تولید می‌کنیم، کدهای قبلی رو باطل می‌کنیم و توی دیتابیس با انقضای ۲ دقیقه ذخیره می‌کنیم
+    public async Task<SendOtpResponseDto> SendOtpAsync(SendOtpRequestDto request, CancellationToken cancellationToken = default)
     {
         var rawPhone = request.PhoneNumber?.Trim() ?? string.Empty;
         var normalizedPhone = NormalizePhoneNumber(rawPhone);
@@ -45,32 +45,48 @@ public class UserService : IUserService
         // اعتبارسنجی فرمت شماره موبایل‌های ایران (۱۱ رقم که با ۰۹ شروع میشه)
         if (!IsValidIranianMobile(normalizedPhone))
         {
-            return Task.FromResult(new SendOtpResponseDto
+            return new SendOtpResponseDto
             {
                 Success = false,
                 Message = "شماره موبایل وارد شده معتبر نیست. لطفاً یک شماره ۱۱ رقمی مثل ۰۹۱۲۳۴۵۶۷۸۹ وارد کنید.",
                 ExpirySeconds = 0
-            });
+            };
         }
 
-        // تولید کد تصادفی ۵ رقمی شیک و ساده بین ۱۰۰۰۰ تا ۹۹۹۹۹
-        var otpCode = Random.Shared.Next(10000, 99999).ToString();
+        // ۱. ابطال کدهای فعال قبلی این شماره تلفن در دیتابیس تا فقط آخرین کد صادر شده معتبر باشه
+        await _unitOfWork.OtpCodes.InvalidatePreviousOtpsAsync(normalizedPhone, cancellationToken);
 
-        // ذخیره توی کش به مدت ۲ دقیقه (۱۲۰ ثانیه)
-        var cacheKey = $"OTP_{normalizedPhone}";
-        _cache.Set(cacheKey, otpCode, TimeSpan.FromSeconds(120));
+        // ۲. تولید کد تصادفی ۵ رقمی بین ۱۰۰۰۰ تا ۹۹۹۹۹
+        var otpCode = Random.Shared.Next(10000, 99999).ToString();
+        var now = DateTime.UtcNow;
+        const int expirySeconds = 120; // ۲ دقیقه اعتبار دقیق به وقت یوتی‌سی
+
+        // ۳. ایجاد و ذخیره انتیتی در دیتابیس
+        var otpEntity = new OtpCode
+        {
+            Id = Guid.NewGuid(),
+            PhoneNumber = normalizedPhone,
+            Code = otpCode,
+            CreatedAt = now,
+            ExpiresAt = now.AddSeconds(expirySeconds),
+            IsUsed = false,
+            AttemptCount = 0
+        };
+
+        await _unitOfWork.OtpCodes.AddAsync(otpEntity, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // چون در حال حاضر پنل پیامکی وصل نیست، کد اوتی‌پی رو در پاسخ می‌ذاریم تا فرانت بتونه توی توستر از بالا نشونش بده
-        return Task.FromResult(new SendOtpResponseDto
+        return new SendOtpResponseDto
         {
             Success = true,
-            Message = "کد تایید یکبارمصرف با موفقیت صادر شد.",
+            Message = "کد تایید یکبارمصرف با موفقیت صادر شد و در پایگاه داده ثبت گردید.",
             OtpCode = otpCode,
-            ExpirySeconds = 120
-        });
+            ExpirySeconds = expirySeconds
+        };
     }
 
-    // بررسی کد اوتی‌پی وارد شده؛ اگر کد درست بود لاگین می‌کنیم و وضعیت آنبوردینگ کاربر رو می‌سنجیم
+    // بررسی کد اوتی‌پی وارد شده؛ جستجو در دیتابیس، بررسی انقضا، یکبار مصرف کردن کد و لاگین یا ساخت کاربر
     public async Task<AuthResponseDto> VerifyOtpAndLoginAsync(VerifyOtpRequestDto request, CancellationToken cancellationToken = default)
     {
         var rawPhone = request.PhoneNumber?.Trim() ?? string.Empty;
@@ -86,20 +102,23 @@ public class UserService : IUserService
             };
         }
 
-        var cacheKey = $"OTP_{normalizedPhone}";
+        // ۱. جستجوی مستقیم در دیتابیس برای پیدا کردن کد معتبر، فعال و منقضی‌نشده
+        var validOtp = await _unitOfWork.OtpCodes.GetLatestValidOtpAsync(normalizedPhone, inputOtp, cancellationToken);
 
-        // اول بررسی می‌کنیم آیا کدی توی کش هست یا منقضی شده
-        if (!_cache.TryGetValue(cacheKey, out string? cachedOtp) || cachedOtp != inputOtp)
+        if (validOtp is null)
         {
             return new AuthResponseDto
             {
                 Success = false,
-                Message = "کد تایید وارد شده نامعتبر است یا زمان آن به پایان رسیده است."
+                Message = "کد تایید وارد شده نامعتبر است، منقضی شده یا قبلاً استفاده شده است."
             };
         }
 
-        // حالا که کد تایید شد، برای امنیت سریعاً از کش پاکش می‌کنیم که دوباره استفاده نشه
-        _cache.Remove(cacheKey);
+        // ۲. سوزاندن کد در دیتابیس تا کاملاً یکبار مصرف باشه و کسی نتونه دوباره باهاش لاگین کنه
+        validOtp.IsUsed = true;
+        validOtp.UsedAt = DateTime.UtcNow;
+        _unitOfWork.OtpCodes.Update(validOtp);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // بررسی می‌کنیم آیا این شماره قبلاً توی سامانه ثبت‌نام کرده یا نه
         var user = await _userManager.Users

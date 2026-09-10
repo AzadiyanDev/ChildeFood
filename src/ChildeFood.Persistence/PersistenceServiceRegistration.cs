@@ -52,6 +52,7 @@ public static class PersistenceServiceRegistration
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<ICouponRepository, CouponRepository>();
+        services.AddScoped<IOtpRepository, OtpRepository>();
 
         // ثبت الگوی واحد کار (Unit Of Work)
         services.AddScoped<IUnitOfWork, ChildeFood.Persistence.UnitOfWork.UnitOfWork>();

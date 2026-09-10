@@ -2,6 +2,8 @@ using ChildeFood.Application;
 using ChildeFood.Application.Interfaces;
 using ChildeFood.Infrastructure;
 using ChildeFood.Persistence;
+using ChildeFood.Persistence.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,12 +32,22 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// اطمینان از پاکسازی دیتای خراب و سیدینگ خودکار دیتابیس در زمان استارت
+// اطمینان از اعمال آخرین مایگریشن‌ها و سیدینگ خودکار دیتابیس در زمان استارت
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        if (dbContext.Database.IsRelational())
+        {
+            await dbContext.Database.MigrateAsync();
+        }
+        else
+        {
+            await dbContext.Database.EnsureCreatedAsync();
+        }
+
         var schoolService = services.GetRequiredService<ISchoolService>();
         await schoolService.SeedDefaultSchoolsAsync();
 
